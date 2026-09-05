@@ -19,7 +19,7 @@ from django.core.mail import send_mail
 from customers.models import Address
 from django.urls import reverse
 from users.models import ReferralCode
-# from users.utils import get_active_referral_settings
+from users.utils import get_active_referral_settings
 from core.otp import OTP_EXPIRY_MINUTES
 
 User = get_user_model()
@@ -135,7 +135,7 @@ def account_profile(request):
                 try:
                     cloudinary.uploader.destroy(user.profile_pic.public_id)
                 except Exception as e:
-                    print("Cloudinary delete error:", e)
+                    pass
 
                 user.profile_pic = None
                 photo_updated = True
@@ -180,7 +180,6 @@ def account_profile(request):
         
         return redirect("account_profile")
     
-    # prepare referral info for profile display
     referral_code_obj = None
     referral_link = None
     referral_reward_amount = 0
@@ -200,10 +199,10 @@ def account_profile(request):
         signup_path = reverse('signup')
         referral_link = request.build_absolute_uri(f'{signup_path}?ref={referral_code_obj.code}')
 
-        # settings_obj = get_active_referral_settings()
-        # if settings_obj:
-        #     referral_reward_amount = settings_obj.referral_reward_amount or 0
-        #     referred_user_reward = settings_obj.referred_user_reward or 0
+        settings_obj = get_active_referral_settings()
+        if settings_obj:
+            referral_reward_amount = settings_obj.referral_reward_amount or 0
+            referred_user_reward = settings_obj.referred_user_reward or 0
     except Exception:
         referral_code_obj = None
         referral_link = None

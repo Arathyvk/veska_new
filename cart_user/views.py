@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST
 
 from cart_user.models import CartItem, MAX_QTY_PER_ITEM
 from cart_user.cart_helpers import get_cart, cart_count_payload, wants_json
-# from product_admin.models import Product, ProductVariant
+from product_admin.models import Product, ProductVariant
 # from wishlist_user.models import Wishlist, WishlistProduct
 # from checkout_page.views import FREE_SHIPPING_THRESHOLD as FREE_SHIPPING, SHIPPING_CHARGE as SHIPPING_FEE
 
@@ -57,31 +57,31 @@ def get_cart_count(request):
 
 @require_POST
 def cart_add(request, slug):
-    # product = get_object_or_404(Product, slug=slug, is_active=True)
+    product = get_object_or_404(Product, slug=slug, is_active=True)
     action  = request.POST.get('action', 'add_cart')   
     next_url = _safe_next(request, slug)
 
-    # if product.total_stock == 0:
-    #     return _json_or_redirect(
-    #         request, _get_cart(request), next_url,
-    #         f'"{product.name}" is out of stock.', 'error',
-    #     )
+    if product.total_stock == 0:
+        return _json_or_redirect(
+            request, _get_cart(request), next_url,
+            f'"{product.name}" is out of stock.', 'error',
+        )
 
     size    = request.POST.get('size', '').strip()
     color   = request.POST.get('color', '').strip()
 
     variant = None
     if size:
-        # if product.variants.filter(color__isnull=False).exclude(color='').exists() and not color:
-        #     return _json_or_redirect(
-        #         request, _get_cart(request), next_url,
-        #         'Please select a color for this product.', 'error',
-        #     )
+        if product.variants.filter(color__isnull=False).exclude(color='').exists() and not color:
+            return _json_or_redirect(
+                request, _get_cart(request), next_url,
+                'Please select a color for this product.', 'error',
+            )
 
-        # variant_qs = ProductVariant.objects.filter(product=product, size=size)
-        # if color:
-        #     variant_qs = variant_qs.filter(color=color)
-        # variant = variant_qs.first()
+        variant_qs = ProductVariant.objects.filter(product=product, size=size)
+        if color:
+            variant_qs = variant_qs.filter(color=color)
+        variant = variant_qs.first()
 
         if variant is None:
             error_text = f'Size "{size}"'
@@ -97,11 +97,11 @@ def cart_add(request, slug):
                 request, _get_cart(request), next_url,
                 f'Size {size} is out of stock.', 'error',
             )
-    # elif product.total_stock > 0 and product.variants.exists():
-    #     return _json_or_redirect(
-    #         request, _get_cart(request), next_url,
-    #         'Please select a size before adding to cart.', 'error',
-    #     )
+    elif product.total_stock > 0 and product.variants.exists():
+        return _json_or_redirect(
+            request, _get_cart(request), next_url,
+            'Please select a size before adding to cart.', 'error',
+        )
 
 
     try:
