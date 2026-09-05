@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 
     'users',
     'admin_side',
+    'customers',
 ]
 
 SITE_ID = 1
