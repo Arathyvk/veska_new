@@ -13,7 +13,7 @@ from product_admin.models import Product, ProductReview, ProductVariant,ProductI
 from cart_user.models import CartItem
 from cart_user.cart_helpers import get_cart, cart_count_payload, wants_json
 # from wishlist_user.models import Wishlist, WishlistProduct
-# from category_admin.models import Category
+from category_admin.models import Category
 
 ITEMS_PER_PAGE   = 12
 MAX_QTY_PER_ITEM = 10
@@ -226,7 +226,7 @@ def product_shop(request):
         'has_filters': has_filters,
         'sort_by': sort_key,
         'sort_options': SORT_OPTIONS,
-        # 'all_categories': Category.objects.filter(is_active=True),
+        'all_categories': Category.objects.filter(is_active=True),
         'all_sizes': ProductVariant.SIZE_CHOICES,
         'stock_choices': STOCK_CHOICES,
         'global_price_min': global_price_min,
