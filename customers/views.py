@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.mail import send_mail
 
-from customers.models import Address
+from customers.models import Address, Profile
 from django.urls import reverse
 from users.models import ReferralCode
 from users.utils import get_active_referral_settings
@@ -69,11 +69,8 @@ def _delete_cloudinary_image(public_id):
             return False
     return False
 
-def _upload_profile_photo(user, image_data):
+def _upload_profile_photo(image_data, user):
     try:
-        if user.profile_pic:
-            _delete_cloudinary_image(user.profile_pic)
-        
         result = cloudinary.uploader.upload(
             image_data,
             folder="profile_photos",
@@ -84,135 +81,135 @@ def _upload_profile_photo(user, image_data):
             height=400,
             resource_type="image",
         )
+
         return result["public_id"], None
+
     except Exception as e:
+        print("Cloudinary upload error:", e)
         return None, str(e)
+    
 
 @login_required
 @never_cache
 def account_profile(request):
     user = request.user
-    
+    profile, created = Profile.objects.get_or_create(user=user)
+
     if request.method == "POST":
         first_name = request.POST.get("first_name", "").strip()
         last_name = request.POST.get("last_name", "").strip()
         phone = request.POST.get("phone_number", "").strip()
         cropped_photo = request.POST.get("cropped_photo", "").strip()
         remove_photo = request.POST.get("remove_photo", "").strip()
-        
+
         errors = []
-        
+
         if not first_name:
             errors.append("First name is required.")
         elif not re.fullmatch(r"[A-Za-z]+", first_name):
             errors.append("First name must contain only letters.")
-        
+
         if last_name and not re.fullmatch(NAME_REGEX, last_name):
             errors.append("Last name must contain only letters and spaces.")
-        
+
         if phone:
             if not re.fullmatch(r"[6-9]\d{9}", phone):
                 errors.append("Enter a valid 10-digit mobile number.")
             elif len(set(phone)) == 1:
                 errors.append("Mobile number cannot contain all identical digits.")
-        
-        if not phone:
+
+        photo_only_action = remove_photo == "true" or (cropped_photo and cropped_photo.startswith("data:image"))
+
+        if not phone and not photo_only_action:
             errors.append("Please update the mobile number before saving your profile.")
-        
+
         if errors:
-            for err in errors:
-                messages.error(request, err)
+            for error in errors:
+                messages.error(request, error)
             return render(request, "account_profile.html")
-        
+
         user.first_name = first_name.capitalize()
         user.last_name = last_name
-        user.phone_number = phone
-        
-        photo_updated = False
-        
+
+        if phone:
+            user.phone_number = phone
+
         if remove_photo == "true":
-            if user.profile_pic:
+            if profile.profile_image:
                 try:
-                    cloudinary.uploader.destroy(user.profile_pic.public_id)
-                except Exception as e:
+                    cloudinary.uploader.destroy(profile.profile_image.public_id, resource_type="image")
+                except Exception:
                     pass
 
-                user.profile_pic = None
-                photo_updated = True
+                profile.profile_image = None
+                profile.save(update_fields=["profile_image"])
                 messages.success(request, "Profile photo removed successfully.")
             else:
                 messages.warning(request, "No profile photo to remove.")
-        
+
         elif cropped_photo and cropped_photo.startswith("data:image"):
             try:
-                image_data = cropped_photo.split(",")[1]
+                image_data = cropped_photo.split(",", 1)[1]
                 image_bytes = base64.b64decode(image_data)
-                
-                public_id, error = _upload_profile_photo(user, image_bytes)
-                
-                if error:
-                    messages.error(request, f"Failed to upload photo: {error}")
-                    return render(request, "account_profile.html")
-                else:
-                    if user.profile_pic:
-                        _delete_cloudinary_image(user.profile_pic)
-                    
-                    user.profile_pic = public_id
-                    photo_updated = True
-                    messages.success(request, "Profile photo uploaded successfully.")
-                    
+
+                result = cloudinary.uploader.upload(
+                    image_bytes,
+                    folder="profile_photos",
+                    public_id=f"profile_{user.pk}",
+                    overwrite=True,
+                    crop="fill",
+                    width=400,
+                    height=400,
+                    resource_type="image"
+                )
+
+                profile.profile_image = result["public_id"]
+                profile.save(update_fields=["profile_image"])
+                messages.success(request, "Profile photo updated successfully.")
+
             except Exception as e:
-                messages.error(request, f"Failed to process photo: {str(e)}")
+                messages.error(request, f"Failed to save profile photo: {e}")
                 return render(request, "account_profile.html")
-        
+
         try:
             user.save()
-            user.refresh_from_db() 
-            
-            if not photo_updated and not remove_photo == "true":
-                messages.success(request, "Profile updated successfully.")
-            elif not photo_updated:
-                messages.success(request, "Profile updated with new photo.")    
-                
         except Exception as e:
-            messages.error(request, f"Failed to save profile: {str(e)}")
+            messages.error(request, f"Failed to save profile: {e}")
             return render(request, "account_profile.html")
-        
+
         return redirect("account_profile")
-    
+
     referral_code_obj = None
     referral_link = None
     referral_reward_amount = 0
     referred_user_reward = 0
+
     try:
-        referral_code_obj = (
-            ReferralCode.objects
-            .filter(user=user, is_active=True)
-            .order_by("-created_at")
-            .first()
-        )
+        referral_code_obj = ReferralCode.objects.filter(user=user, is_active=True).order_by("-created_at").first()
+
         if referral_code_obj is None:
-            referral_code_obj = ReferralCode.objects.create(
-                user=user,
-                code=f"REF{_generate_otp(8)}"
-            )
-        signup_path = reverse('signup')
-        referral_link = request.build_absolute_uri(f'{signup_path}?ref={referral_code_obj.code}')
+            referral_code_obj = ReferralCode.objects.create(user=user, code=f"REF{_generate_otp(8)}")
+
+        signup_path = reverse("signup")
+        referral_link = request.build_absolute_uri(f"{signup_path}?ref={referral_code_obj.code}")
 
         settings_obj = get_active_referral_settings()
+
         if settings_obj:
             referral_reward_amount = settings_obj.referral_reward_amount or 0
             referred_user_reward = settings_obj.referred_user_reward or 0
+
     except Exception:
         referral_code_obj = None
         referral_link = None
 
     return render(request, "account_profile.html", {
-        'referral_code_obj': referral_code_obj,
-        'referral_link': referral_link,
-        'referral_reward_amount': referral_reward_amount,
-        'referred_user_reward': referred_user_reward,
+        "referral_code_obj": referral_code_obj,
+        "referral_link": referral_link,
+        "referral_reward_amount": referral_reward_amount,
+        "referred_user_reward": referred_user_reward,
     })
+
 
 @login_required
 @never_cache
