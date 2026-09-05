@@ -21,10 +21,10 @@ from django.http import JsonResponse
 
 from order_user.order_email import send_order_confirmation
 from order_user.models import Order, OrderItem
-# from order_admin.models import ReturnRequest, RETURN_DAYS
+from order_admin.models import ReturnRequest, RETURN_DAYS
 from product_admin.models import  ProductReview
-# from wallet_user.utils import refund_on_cancellation, refund_single_item_cancellation
-# from coupon_admin.models import Coupon, CouponUsage
+from wallet_user.utils import refund_on_cancellation, refund_single_item_cancellation
+from coupon_admin.models import Coupon, CouponUsage
 
 
 NON_RETURNABLE_CATEGORIES = [

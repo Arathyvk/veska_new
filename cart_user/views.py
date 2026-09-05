@@ -7,7 +7,7 @@ from cart_user.models import CartItem, MAX_QTY_PER_ITEM
 from cart_user.cart_helpers import get_cart, cart_count_payload, wants_json
 from product_admin.models import Product, ProductVariant
 from wishlist_user.models import Wishlist, WishlistProduct
-# from checkout_page.views import FREE_SHIPPING_THRESHOLD as FREE_SHIPPING, SHIPPING_CHARGE as SHIPPING_FEE
+from checkout_page.views import FREE_SHIPPING_THRESHOLD as FREE_SHIPPING, SHIPPING_CHARGE as SHIPPING_FEE
 
 def _get_cart(request):
     return get_cart(request)
@@ -170,9 +170,9 @@ def cart_detail(request):
         (item.line_total - item.discounted_line_total) for item in ok_items if item.discounted_line_total is not None
     )
     discounted_subtotal = subtotal - offer_discount
-    # shipping = 0 if discounted_subtotal >= FREE_SHIPPING else SHIPPING_FEE
-    # order_total = discounted_subtotal + shipping
-    # remaining_free = max(0, FREE_SHIPPING - discounted_subtotal)
+    shipping = 0 if discounted_subtotal >= FREE_SHIPPING else SHIPPING_FEE
+    order_total = discounted_subtotal + shipping
+    remaining_free = max(0, FREE_SHIPPING - discounted_subtotal)
 
     return render(request, 'cart_detail.html', {
         'cart': cart, 
@@ -182,9 +182,9 @@ def cart_detail(request):
         'can_checkout': can_checkout,
         'subtotal': subtotal,
         'offer_discount': offer_discount,
-        # 'shipping': shipping,
-        # 'order_total': order_total,
-        # 'remaining_free': remaining_free, 
+        'shipping': shipping,
+        'order_total': order_total,
+        'remaining_free': remaining_free, 
         'max_qty': MAX_QTY_PER_ITEM,
     })
 
@@ -207,16 +207,16 @@ def cart_update(request, item_id):
             ok_items = [i for i in cart.items.select_related('product', 'variant').all() if i.is_available]
             offer_discount = sum((i.line_total - i.discounted_line_total) for i in ok_items if i.discounted_line_total is not None)
             discounted_subtotal = subtotal - offer_discount
-            # shipping = 0 if discounted_subtotal >= FREE_SHIPPING else SHIPPING_FEE
-            # grand_total = discounted_subtotal + shipping
+            shipping = 0 if discounted_subtotal >= FREE_SHIPPING else SHIPPING_FEE
+            grand_total = discounted_subtotal + shipping
             return JsonResponse({
                 'success': True,
                 'message': 'Item removed from cart',
                 'cart_count': cart.total_items,
                 'cart_subtotal': f"{subtotal:.2f}",
                 'offer_discount': f"{offer_discount:.2f}",
-                # 'grand_total': f"{grand_total:.2f}",
-                # 'shipping_fee': shipping
+                'grand_total': f"{grand_total:.2f}",
+                'shipping_fee': shipping
             })
         messages.success(request, 'Item removed from cart.')
         return redirect('cart_detail')
@@ -257,8 +257,8 @@ def cart_update(request, item_id):
     ok_items = [i for i in cart.items.select_related('product', 'variant').all() if i.is_available]
     offer_discount = sum((i.line_total - i.discounted_line_total) for i in ok_items if i.discounted_line_total is not None)
     discounted_subtotal = subtotal - offer_discount
-    # shipping = 0 if discounted_subtotal >= FREE_SHIPPING else SHIPPING_FEE
-    # grand_total = discounted_subtotal + shipping
+    shipping = 0 if discounted_subtotal >= FREE_SHIPPING else SHIPPING_FEE
+    grand_total = discounted_subtotal + shipping
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
@@ -270,9 +270,9 @@ def cart_update(request, item_id):
             'cart_count': cart.total_items,
             'cart_subtotal': f"{subtotal:.2f}",
             'offer_discount': f"{offer_discount:.2f}",
-            # 'grand_total': f"{grand_total:.2f}",
-            # 'shipping_fee': shipping,
-            # 'shipping_free': shipping == 0
+            'grand_total': f"{grand_total:.2f}",
+            'shipping_fee': shipping,
+            'shipping_free': shipping == 0
         })
     
     messages.success(request, message)
