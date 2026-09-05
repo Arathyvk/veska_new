@@ -16,8 +16,9 @@ from product_admin.models import Product
 from product_admin.views import is_admin
 
 CATEGORY_CHOICES = [
-    ('Formal', 'Formal'), ('Casual', 'Casual'), ('Party', 'Party'),
-    ('Sports', 'Sports'), ('Ethnic', 'Ethnic'), ('Sandal', 'Sandal'),
+    ('Boots', 'Boots'), ('Casual', 'Casual'), ('Flats', 'Flats'),
+    ('Sports Shoes', 'Sports Shoes'), ('Loafers', 'Loafers'), 
+    ('Sneakers', 'Sneakers'),('Heels', 'Heels')
 ]
 
 

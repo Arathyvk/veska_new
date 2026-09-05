@@ -283,20 +283,28 @@ def product_detail(request, slug):
         }
         for size in available_sizes
     ]
-
-    variant_gallery = {
-        v.id:{
-            'size':v.size,
-            'color':v.color,
-            'price':str(v.price),
-            'stock':v.stock,
-            'images':[img.image.url for img in v.images.all().order_by('order')],
+    variant_gallery = {}
+    for v in variants:
+        variant_offer = product.get_best_offer(amount=v.price)
+        variant_offer_discount = (
+            variant_offer.calculate_discount(v.price) if variant_offer else Decimal('0')
+        )
+        variant_final_price = (
+            v.price - variant_offer_discount if variant_offer else v.price
+        )
+        variant_gallery[v.id] = {
+            'size': v.size,
+            'color': v.color,
+            'price': str(variant_final_price),          
+            'original_price': str(v.price) if variant_offer else None,  
+            'stock': v.stock,
+            'images': [img.image.url for img in v.images.all().order_by('order')],
+            'offer_name': variant_offer.name if variant_offer else '',
+            'discount_display': getattr(variant_offer, 'discount_display', '') if variant_offer else '',
+            'offer_discount': str(variant_offer_discount) if variant_offer else '0',
         }
-        for v in variants
-    }
 
-    first_variant = product.variants.order_by("price").first()
-    product_price = first_variant.price if first_variant else 0
+    base_price = first_variant.price if (first_variant := product.variants.order_by("price").first()) else 0
 
     total_stock = product.total_stock
     size_stock_map = {}
@@ -312,15 +320,6 @@ def product_detail(request, slug):
         stock_status, stock_label = 'in_stock', 'In Stock'
 
     reviews_qs = ProductReview.objects.filter(product=product)
-
-    for review in reviews_qs:
-        print(
-            review.id,
-            review.product_id,
-            review.author_name,
-            review.rating,
-            review.is_approved
-        )    
     review_count     = reviews_qs.count()
     avg_rating       = 0
     rating_breakdown = [0, 0, 0, 0, 0]
@@ -331,16 +330,20 @@ def product_detail(request, slug):
                 rating_breakdown[5 - r.rating] += 1
     reviews = list(reviews_qs[:10])
 
-    original_price   = getattr(product, 'original_price', None)
-    discount_percent = getattr(product, 'discount_percent', 0)
-    savings = (
-        (original_price - product_price)
-        if (original_price and original_price > product.price)
-        else None
-    )
-    best_offer = product.get_best_offer(amount=product_price)
-    offer_discount = best_offer.calculate_discount(product_price) if best_offer else Decimal('0')
-    discounted_price = product_price - offer_discount if best_offer else product_price
+    best_offer = product.get_best_offer(amount=base_price)
+    offer_discount = best_offer.calculate_discount(base_price) if best_offer else Decimal('0')
+    discounted_price = (base_price - offer_discount) if best_offer else base_price
+
+    if best_offer and offer_discount > 0:
+        original_price   = base_price         
+        savings          = offer_discount
+        discount_percent = round((offer_discount / base_price) * 100, 2) if base_price else 0
+    else:
+        original_price   = None                      
+        savings           = None
+        discount_percent = 0
+    product_price = discounted_price
+
     highlights = getattr(product, 'highlight_list', None) or [
         'Premium quality materials',
         'Handcrafted with care',
@@ -357,7 +360,7 @@ def product_detail(request, slug):
     in_wishlist = (
         wl.items.filter(product_id=product.id).exists()
         if wl else False
-    )    
+    )
     category_display = product.category.name
 
     return render(request, 'product_detail.html', {
@@ -383,15 +386,14 @@ def product_detail(request, slug):
         'highlights':       highlights,
         'in_wishlist':      in_wishlist,
         'category_display': category_display,
-        'product_price':   product_price,
-        'best_offer':      best_offer,
-        'offer_discount':  offer_discount,
+        'product_price':    product_price,    
+        'best_offer':       best_offer,
+        'offer_discount':   offer_discount,
         'discounted_price': discounted_price,
         'variant_gallery_json': json.dumps(variant_gallery),
         'size_color_map_json': json.dumps(size_color_map),
         'size_color_map': size_color_map,
     })
-
 
 @require_POST
 def cart_add_with_size(request):

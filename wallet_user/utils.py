@@ -17,14 +17,10 @@ def refund_on_cancellation(order):
         return None
 
     is_pre_confirm_cancellation = order.status in {"pending", "confirmed", "processing"}
-    # consider orders where payment was captured (paid_at) even if payment_status
-    # might be missing or inconsistent. This helps credit refunds when the
-    # payment was actually completed.
+  
     is_payment_ready = (order.payment_status in {"paid", "pending"}) or bool(getattr(order, 'paid_at', None))
 
     if not is_payment_ready and not is_pre_confirm_cancellation:
-        # skip refund: no payment captured and not a pre-confirm cancellation
-        print(f"refund_on_cancellation: skipped for order={order.pk}, payment_status={order.payment_status}, paid_at={getattr(order, 'paid_at', None)}, status={order.status}")
         return None
 
     refund_amount = (

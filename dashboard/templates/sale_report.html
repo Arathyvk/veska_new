@@ -48,20 +48,50 @@
   </div>
 
   <!-- Filter -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <form method="get" class="row g-3 align-items-end">
+  <div class="card shadow-sm mb-4" style="margin-right: 107pc;">
+<div class="card-body">
+    <form method="get" class="row g-3 align-items-end" style="margin-left: 2pc;">
         <div class="col-sm-6 col-md-3">
-          <label class="form-label small fw-semibold">Filter type</label>
-          <select name="filter" class="form-select form-select-sm" style="font-size: 16px;"
-                  id="filterType" onchange="toggleDates(this.value)">
-            <option value="daily"   {% if filter_type == 'daily'   %}selected{% endif %}>Today</option>
-            <option value="weekly"  {% if filter_type == 'weekly'  %}selected{% endif %}>Last 7 days</option>
-            <option value="monthly" {% if filter_type == 'monthly' %}selected{% endif %}>This month</option>
-            <option value="yearly"  {% if filter_type == 'yearly'  %}selected{% endif %}>This year</option>
-            <option value="custom"  {% if filter_type == 'custom'  %}selected{% endif %}>Custom range</option>
-          </select>
+            <label class="form-label small fw-semibold" style="margin-top: 1pc;">
+                Filter type
+            </label>
+
+            <select name="filter"
+                    class="form-select form-select-sm"
+                    style="font-size: 16px;"
+                    id="filterType"
+                    onchange="toggleDates(this.value)">
+
+                <option value="daily"
+                        {% if filter_type == 'daily' %}selected{% endif %}>
+                    Today
+                </option>
+
+                <option value="weekly"
+                        {% if filter_type == 'weekly' %}selected{% endif %}>
+                    Last 7 days
+                </option>
+
+                <option value="monthly"
+                        {% if filter_type == 'monthly' %}selected{% endif %}>
+                    This month
+                </option>
+
+                <option value="yearly"
+                        {% if filter_type == 'yearly' %}selected{% endif %}>
+                    This year
+                </option>
+
+                <option value="custom"
+                        {% if filter_type == 'custom' %}selected{% endif %}>
+                    Custom range
+                </option>
+
+            </select>
         </div>
+    </form>
+</div>
+      
         <div class="col-sm-6 col-md-3" id="fromWrap"
              style="display:{% if filter_type == 'custom' %}block{% else %}none{% endif %}">
           <label class="form-label small fw-semibold">Date from</label>
@@ -75,7 +105,7 @@
                  value="{{ date_to }}">
         </div>
         <div class="col-sm-6 col-md-3">
-          <button type="submit" class="btn btn-sm btn-primary w-100" style ="margin-top:10px">Apply filter</button>
+          <button type="submit" class="btn btn-sm btn-primary w-100" style ="margin-top:10px; margin-bottom: 1pc; margin-left: 2pc;">Apply filter</button>
         </div>
       </form>
     </div>

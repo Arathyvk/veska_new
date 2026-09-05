@@ -87,21 +87,53 @@ button,input,textarea{font-family:var(--body)}
 .rating-count{font-size:13px;color:var(--muted)}
 .rating-count a{color:var(--terra);text-decoration:underline;text-underline-offset:3px}
 
-.price-block{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px}
-.price-now{font-family:var(--head);font-size:34px;font-weight:700;color:var(--charcoal);letter-spacing:-.5px}
-.price-original{font-size:18px;color:var(--muted-lt);text-decoration:line-through;font-weight:400}
-.discount-badge{display:inline-flex;align-items:center;background:var(--success-pale);color:var(--success);
-  border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;letter-spacing:.3px}
-.savings-line{font-size:12.5px;color:var(--success);font-weight:500;margin-bottom:18px}
+.price-block{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+    margin-bottom:8px;
+}
+
+.price-now{
+    font-family:var(--head);
+    font-size:34px;
+    font-weight:700;
+    color:var(--charcoal);
+    letter-spacing:-.5px;
+    order:1;
+}
+
+.price-original{
+    font-size:18px;
+    color:var(--muted-lt);
+    text-decoration:line-through;
+    font-weight:400;
+    order:2;
+}
+
+.discount-badge{
+    display:inline-flex;
+    align-items:center;
+    background:var(--success-pale);
+    color:var(--success);
+    border-radius:6px;
+    padding:3px 9px;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:.3px;
+    order:3;
+}
+.savings-line{font-size:15px;color:var(--success);font-weight:500;margin-bottom:18px}
 
 .stock-badge{display:inline-flex;align-items:center;gap:6px;border-radius:40px;padding:5px 13px;
-  font-size:11.5px;font-weight:600;margin-bottom:20px}
+  font-size:15px;font-weight:600;margin-bottom:20px}
 .stock-badge .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .stock-in .dot{background:var(--success)}.stock-in{background:var(--success-pale);color:var(--success)}
 .stock-low .dot{background:var(--warning)}.stock-low{background:var(--warning-pale);color:var(--warning)}
 .stock-out .dot{background:var(--danger)}.stock-out{background:var(--danger-pale);color:var(--danger)}
 
-.selector-label{font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+.selector-label{font-size:15px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
   color:var(--charcoal);margin-bottom:10px}
 .size-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
 .size-btn{min-width:64px;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
@@ -124,7 +156,7 @@ button,input,textarea{font-family:var(--body)}
 .qty-label{font-size:12px;color:var(--muted)}
 /* ── COLOR SELECTION ── */
 .card-colors{margin-bottom:8px}
-.color-label{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px}
+.color-label{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px}
 .color-options{display:flex;flex-wrap:wrap;gap:4px}
 .color-btn{
   display:flex;align-items:center;gap:3px;padding:2px 8px 2px 4px;
@@ -133,8 +165,9 @@ button,input,textarea{font-family:var(--body)}
 }
 .color-btn:hover{border-color:var(--terra);background:var(--terra-pale)}
 .color-btn.active{border-color:var(--terra);background:var(--terra-pale);color:var(--terra-deep);font-weight:600}
+.color-btn.disabled,.size-btn.disabled{opacity:.4;cursor:not-allowed}
 .color-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,0.08);flex-shrink:0}
-.color-name{font-size:8px;text-transform:uppercase}
+.color-name{font-size:13px;text-transform:uppercase}
 .cta-row{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap}
 .btn-add-cart{flex:1;min-width:160px;background:var(--charcoal);color:#fff;
   border:none;border-radius:var(--radius-md);font-family:var(--body);font-size:13.5px;
@@ -272,7 +305,6 @@ button,input,textarea{font-family:var(--body)}
   <div class="messages-stack">
     {% for message in messages %}
     <div class="msg-bar {{ message.tags }}">
-      {% if message.tags == 'success' %}{% elif message.tags == 'warning' %}{% elif message.tags == 'error' %}{% else %}{% endif %}
       {{ message }}
     </div>
     {% endfor %}
@@ -354,31 +386,75 @@ button,input,textarea{font-family:var(--body)}
         {% endif %}
       </div>
 
-      <div class="price-block">
-        <span class="price-now">₹{{ product_price|floatformat:2 }}</span>
-        {% if original_price and original_price > product_price %}
-          <span class="price-original">₹{{ original_price|floatformat:2 }}</span>
-          <span class="discount-badge">{{ discount_percent }}% OFF</span>
+      <!--
+        PRICE BLOCK
+        - price-now (final/offer price) is shown FIRST, on top, via CSS order:1
+        - price-original (struck through) is shown BELOW it, via CSS order:2, only when an offer exists
+        - JS (updateVariantPrice) keeps this in sync when the user changes size/color
+      -->
+      <div class="variant-price-area" id="variantPriceArea">
+          <div class="price-block">
+              <!-- FINAL / OFFER PRICE (always shown, always on top) -->
+              <span class="price-now" id="variantFinalPrice">
+                  ₹{{ product_price|floatformat:2 }}
+              </span>
+
+              <!-- ORIGINAL PRICE (struck through) — shown ONLY when this product actually
+                   has an offer/discount formed on it (best_offer present AND a real price gap).
+                   A product with no offer never shows this, even if prices differ for other reasons. -->
+              <span class="price-original"
+                    id="variantOriginalPrice"
+                    style="{% if not best_offer or not original_price or original_price <= product_price %}display:none;{% endif %}">
+                  {% if best_offer and original_price and original_price > product_price %}
+                      ₹{{ original_price|floatformat:2 }}
+                  {% endif %}
+              </span>
+
+              <!-- DISCOUNT BADGE — same "real offer" gate as the original price above -->
+              <span class="discount-badge"
+                    id="variantDiscount"
+                    style="{% if not best_offer or not original_price or original_price <= product_price %}display:none;{% endif %}">
+                  {% if best_offer and original_price and original_price > product_price %}
+                      {{ discount_percent }}% OFF
+                  {% endif %}
+              </span>
+          </div>
+
+          <!-- OFFER NAME -->
+          <div class="offer-line"
+              id="variantOfferLine"
+              style="{% if not best_offer %}display:none;{% endif %}">
+              {% if best_offer %}
+                  Offer: {{ best_offer.name }}
+                  · {{ best_offer.discount_display }}
+                 
+              {% endif %}
+          </div>
+
+          <!-- SAVINGS -->
+          <div class="savings-line"
+              id="variantSavings"
+              style="{% if not savings %}display:none;{% endif %}">
+              {% if savings %}
+                  You save ₹{{ savings|floatformat:2 }}
+              {% endif %}
+          </div>
+      </div>
+
+      <!-- STOCK BADGE (wrapped so JS can swap it per selected variant) -->
+      <div id="stockBadge">
+        {% if stock_status == 'in_stock' %}
+          <span class="stock-badge stock-in"><span class="dot"></span>In Stock</span>
+        {% elif stock_status == 'low' %}
+          <span class="stock-badge stock-low"><span class="dot"></span>{{ stock_label }}</span>
+        {% else %}
+          <span class="stock-badge stock-out"><span class="dot"></span>Out of Stock</span>
         {% endif %}
       </div>
-      {% if best_offer %}
-        <div class="offer-line">Offer: {{ best_offer.name }} · {{ best_offer.discount_display }}{% if offer_discount > 0 %} · Save ₹{{ offer_discount|floatformat:2 }}{% endif %}</div>
-      {% endif %}
-      {% if savings %}
-        <div class="savings-line">You save ₹{{ savings|floatformat:2 }}</div>
-      {% endif %}
-
-      {% if stock_status == 'in_stock' %}
-        <span class="stock-badge stock-in"><span class="dot"></span>In Stock</span>
-      {% elif stock_status == 'low' %}
-        <span class="stock-badge stock-low"><span class="dot"></span>{{ stock_label }}</span>
-      {% else %}
-        <span class="stock-badge stock-out"><span class="dot"></span>Out of Stock</span>
-      {% endif %}
 
       {% if stock_status == 'out_of_stock' %}
       <div class="soldout-notice">
-        <div class="so-title"> Currently out of stock</div>
+        <div class="so-title">Currently out of stock</div>
         <div class="so-body">
           Browse similar items in
           <a href="{% url 'product_shop' %}?category={{ product.category }}" style="color:var(--terra)">{{ category_display }}</a>.
@@ -391,11 +467,12 @@ button,input,textarea{font-family:var(--body)}
 <!-- Main Form for Add to Cart and Buy Now -->
 <form method="POST" action="{% url 'cart_add' product.slug %}" class="add-cart-form" data-full-page="1" id="mainCartForm" onsubmit="return validateSelection()">
     {% csrf_token %}
-    
+
     <!-- Redirect after add to cart (stay on same page) -->
     <input type="hidden" name="next" value="{{ request.path }}">
     <input type="hidden" name="size" id="sizeInput" value="">
     <input type="hidden" name="color" id="colorInput" value="">
+    <input type="hidden" name="variant_id" id="variantId" value="">
 
       {% if product.variants.all %}
       <div class="card-colors">
@@ -421,7 +498,7 @@ button,input,textarea{font-family:var(--body)}
     <div class="selector-label">SELECT SIZE</div>
     <div class="size-grid" id="sizeGrid">
         {% for option in size_options %}
-        <button type="button" 
+        <button type="button"
                 class="size-btn{% if option.stock == 0 %} oos-size{% endif %}"
                 data-size="{{ option.size }}"
                 data-colors="{{ option.colors|join:',' }}"
@@ -441,7 +518,7 @@ button,input,textarea{font-family:var(--body)}
     <div class="qty-row">
         <div class="qty-ctrl">
             <button type="button" class="qty-btn-ui" onclick="adjustQty(-1)">−</button>
-            <input type="number" name="quantity" id="qtyInput" class="qty-input" 
+            <input type="number" name="quantity" id="qtyInput" class="qty-input"
                    value="1" min="1" max="{{ max_qty }}">
             <button type="button" class="qty-btn-ui" onclick="adjustQty(1)">+</button>
         </div>
@@ -463,13 +540,13 @@ button,input,textarea{font-family:var(--body)}
 <form method="POST" action="{% url 'wishlist_toggle' product.slug %}" id="wishlistForm" style="display: inline;">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ request.path }}">
-   <button type="button" 
-        class="btn-wishlist {% if in_wishlist %}wishlisted{% endif %}" 
+   <button type="button"
+        class="btn-wishlist {% if in_wishlist %}wishlisted{% endif %}"
         data-slug="{{ product.slug }}"
         onclick="toggleWishlist(this, '{{ product.slug }}')">
-    <svg viewBox="0 0 24 24" 
+    <svg viewBox="0 0 24 24"
          fill="{% if in_wishlist %}var(--terra){% else %}none{% endif %}"
-         stroke="currentColor" 
+         stroke="currentColor"
          stroke-width="2">
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
     </svg>
@@ -665,339 +742,658 @@ button,input,textarea{font-family:var(--body)}
 </div>
 </div>
 
+<div class="toast" id="toast"></div>
 
 <script>
-const imageUrls = [{% for img in images %}"{{ img.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}];
-let currentSlide = 0, zoomed = false;
+document.addEventListener("DOMContentLoaded", function () {
 
-function goToSlide(idx) {
-  if (idx < 0 || idx >= imageUrls.length) return;
-  currentSlide = idx;
-  document.getElementById('mainImg').src = imageUrls[idx];
-  document.querySelectorAll('.gallery-dot').forEach((d,i)  => d.classList.toggle('active', i===idx));
-  document.querySelectorAll('.gallery-thumb').forEach((t,i) => t.classList.toggle('active', i===idx));
-}
-function changeSlide(dir) { goToSlide((currentSlide+dir+imageUrls.length)%imageUrls.length); }
+    const hasVariants = {{ variants|length }} > 0;
+    const hasColorVariants = {{ available_colors|length }} > 0;
 
-function toggleZoom(e,el) {
-  zoomed = !zoomed;
-  el.classList.toggle('zoomed', zoomed);
-  if (!zoomed) { const img = document.getElementById('mainImg'); img.style.transform=''; img.style.transformOrigin=''; }
-}
-document.addEventListener('DOMContentLoaded',()=>{
-  const main = document.getElementById('galleryMain');
-  const img  = document.getElementById('mainImg');
-  if (!main||!img) return;
-  main.addEventListener('mousemove', e => {
-    if (!zoomed) return;
-    const r = main.getBoundingClientRect();
-    const x = ((e.clientX-r.left)/r.width)*100;
-    const y = ((e.clientY-r.top)/r.height)*100;
-    img.style.transformOrigin=`${x}% ${y}%`;
-    img.style.transform='scale(2.5)';
-  });
-  main.addEventListener('mouseleave', () => {
-    if (zoomed) { img.style.transform=''; img.style.transformOrigin=''; zoomed=false; main.classList.remove('zoomed'); }
-  });
+    let selectedSize = "";
+    let selectedColor = "";
+    let selectedVariantId = "";
+    let variantGallery = {};
+
+    try {
+        variantGallery = {{ variant_gallery_json|safe }};
+    } catch (error) {
+        console.error("Unable to load variant gallery data:", error);
+        variantGallery = {};
+    }
+
+    let sizeColorMap = {};
+    try {
+        sizeColorMap = JSON.parse('{{ size_color_map_json|escapejs }}');
+    } catch (error) {
+        console.error("Unable to load size/color map:", error);
+        sizeColorMap = {};
+    }
+
+    const sizeInput = document.getElementById("sizeInput");
+    const colorInput = document.getElementById("colorInput");
+    const quantityInput = document.getElementById("qtyInput");
+    const variantIdInput = document.getElementById("variantId");
+
+    const finalPriceEl = document.getElementById("variantFinalPrice");
+    const originalPriceEl = document.getElementById("variantOriginalPrice");
+    const discountEl = document.getElementById("variantDiscount");
+    const offerLineEl = document.getElementById("variantOfferLine");
+    const savingsEl = document.getElementById("variantSavings");
+
+    const selectedColorLabel = document.getElementById("selectedColorLabel");
+    const stockBadge = document.getElementById("stockBadge");
+    const mainImg = document.getElementById("mainImg");
+
+    function formatPrice(value) {
+        const number = parseFloat(value || 0);
+        return "₹" + number.toLocaleString("en-IN", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function normalize(value) {
+        return String(value || "").trim().toLowerCase();
+    }
+
+    function getSizeButtons() {
+        return Array.from(document.querySelectorAll(".size-btn"));
+    }
+
+    function getColorButtons() {
+        return Array.from(document.querySelectorAll(".color-btn"));
+    }
+
+    function findVariant(size, color) {
+        const wantedSize = normalize(size);
+        const wantedColor = normalize(color);
+        if (!wantedSize && !wantedColor) return null;
+
+        for (const [variantId, variant] of Object.entries(variantGallery)) {
+            if (!variant) continue;
+            if (normalize(variant.size) === wantedSize && normalize(variant.color) === wantedColor) {
+                return { id: variantId, data: variant };
+            }
+        }
+        return null;
+    }
+
+    function getVariantById(variantId) {
+        if (!variantId) return null;
+        const variant = variantGallery[String(variantId)];
+        if (!variant) return null;
+        return { id: String(variantId), data: variant };
+    }
+
+    /* ---------------------------------------------------------
+       PRICE: final/offer price is shown FIRST (on top), the
+       original price is struck through and shown BELOW it,
+       only when an actual discount exists for this variant.
+       --------------------------------------------------------- */
+    function updateVariantPrice(variantData) {
+        if (!variantData) return;
+
+        const basePrice = parseFloat(
+            variantData.original_price ?? variantData.base_price ?? variantData.price ?? 0
+        );
+
+        const offerDiscount = parseFloat(
+            variantData.offer_discount ?? variantData.discount_amount ?? variantData.savings ?? 0
+        );
+
+        let finalPrice = parseFloat(variantData.price ?? 0);
+
+        if (offerDiscount > 0 && basePrice > 0) {
+            finalPrice = Math.max(basePrice - offerDiscount, 0);
+        }
+
+        let discountPercent = parseFloat(variantData.discount_percent ?? 0);
+        if (discountPercent <= 0 && basePrice > 0 && finalPrice < basePrice) {
+            discountPercent = ((basePrice - finalPrice) / basePrice) * 100;
+        }
+        discountPercent = Math.round(discountPercent * 100) / 100;
+
+        const offerName = variantData.offer_name || "";
+        const discountDisplay = variantData.discount_display || "";
+
+        // "Real offer" gate: only treat this variant as discounted if it actually
+        // has offer data attached (name, display text, or a positive offer_discount) —
+        // not merely because basePrice and finalPrice differ numerically.
+        const hasRealOffer = !!(offerName || discountDisplay || offerDiscount > 0);
+        const hasOffer = hasRealOffer && basePrice > 0 && finalPrice < basePrice;
+
+        if (finalPriceEl) {
+            finalPriceEl.textContent = formatPrice(finalPrice);
+            finalPriceEl.style.display = "inline";
+        }
+
+        if (originalPriceEl) {
+            if (hasOffer) {
+                originalPriceEl.textContent = formatPrice(basePrice);
+                originalPriceEl.style.display = "inline"; // struck-through via .price-original CSS
+            } else {
+                originalPriceEl.textContent = "";
+                originalPriceEl.style.display = "none";
+            }
+        }
+
+        if (discountEl) {
+            if (hasOffer && discountPercent > 0) {
+                discountEl.textContent = `${discountPercent}% OFF`;
+                discountEl.style.display = "inline-flex";
+            } else {
+                discountEl.textContent = "";
+                discountEl.style.display = "none";
+            }
+        }
+
+        if (offerLineEl) {
+            if (offerName || discountDisplay || offerDiscount > 0) {
+                let offerText = "";
+                if (offerName) offerText = `Offer: ${offerName}`;
+                if (discountDisplay) offerText += (offerText ? " · " : "") + discountDisplay;
+                if (offerDiscount > 0) offerText += (offerText ? " · " : "") + `Save ${formatPrice(offerDiscount)}`;
+                offerLineEl.textContent = offerText;
+                offerLineEl.style.display = "block";
+            } else {
+                offerLineEl.textContent = "";
+                offerLineEl.style.display = "none";
+            }
+        }
+
+        if (savingsEl) {
+            let savings = hasOffer ? basePrice - finalPrice : 0;
+            if (offerDiscount > 0) savings = offerDiscount;
+
+            if (savings > 0) {
+                savingsEl.textContent = `You save ${formatPrice(savings)}`;
+                savingsEl.style.display = "block";
+            } else {
+                savingsEl.textContent = "";
+                savingsEl.style.display = "none";
+            }
+        }
+    }
+
+    function updateStock(variantData) {
+        if (!variantData || !stockBadge) return;
+
+        const stock = parseInt(variantData.stock ?? 0, 10);
+
+        if (stock <= 0) {
+            stockBadge.innerHTML = '<span class="stock-badge stock-out"><span class="dot"></span>Out of Stock</span>';
+        } else if (stock <= 5) {
+            stockBadge.innerHTML = `<span class="stock-badge stock-low"><span class="dot"></span>Only ${stock} left</span>`;
+        } else {
+            stockBadge.innerHTML = '<span class="stock-badge stock-in"><span class="dot"></span>In Stock</span>';
+        }
+
+        if (quantityInput) {
+            quantityInput.max = Math.max(stock, 1);
+            let currentQuantity = parseInt(quantityInput.value || 1, 10);
+            if (stock > 0 && currentQuantity > stock) quantityInput.value = stock;
+            if (stock <= 0) quantityInput.value = 1;
+        }
+    }
+
+    function updateVariantGallery(variantData) {
+        if (!variantData) return;
+        const images = Array.isArray(variantData.images) ? variantData.images : [];
+        if (!images.length) return;
+
+        if (mainImg) {
+            const firstImage = images[0];
+            if (typeof firstImage === "string") mainImg.src = firstImage;
+        }
+
+        const thumbnails = document.querySelectorAll(".gallery-thumb img");
+        thumbnails.forEach(function (img, index) {
+            if (images[index]) img.src = images[index];
+        });
+    }
+
+    function updateSelectedColorLabel() {
+        if (!selectedColorLabel) return;
+        selectedColorLabel.textContent = selectedColor || "Select color";
+    }
+
+    function filterSizesByColor(color) {
+        const wantedColor = normalize(color);
+        getSizeButtons().forEach(function (button) {
+            const size = button.dataset.size || "";
+            const sizeData = sizeColorMap[size] ||
+                sizeColorMap[Object.keys(sizeColorMap).find(key => normalize(key) === normalize(size))];
+
+            let available = false;
+            if (sizeData) {
+                if (Array.isArray(sizeData)) {
+                    available = sizeData.some(item => normalize(item) === wantedColor);
+                } else if (typeof sizeData === "object") {
+                    available = Object.keys(sizeData).some(
+                        key => normalize(key) === wantedColor && parseInt(sizeData[key] || 0, 10) > 0
+                    );
+                }
+            }
+
+            if (!available) {
+                for (const variant of Object.values(variantGallery)) {
+                    if (!variant) continue;
+                    if (normalize(variant.size) === normalize(size) &&
+                        normalize(variant.color) === wantedColor &&
+                        parseInt(variant.stock || 0, 10) > 0) {
+                        available = true;
+                        break;
+                    }
+                }
+            }
+
+            if (available) {
+                button.disabled = false;
+                button.classList.remove("disabled", "oos-size");
+            } else {
+                button.disabled = true;
+                button.classList.add("disabled", "oos-size");
+                if (normalize(selectedSize) === normalize(size)) {
+                    selectedSize = "";
+                    if (sizeInput) sizeInput.value = "";
+                    button.classList.remove("selected");
+                }
+            }
+        });
+    }
+
+    function filterColorsBySize(size) {
+        const wantedSize = normalize(size);
+        getColorButtons().forEach(function (button) {
+            const color = button.dataset.color || "";
+            let available = false;
+
+            for (const variant of Object.values(variantGallery)) {
+                if (!variant) continue;
+                if (normalize(variant.size) === wantedSize &&
+                    normalize(variant.color) === normalize(color) &&
+                    parseInt(variant.stock || 0, 10) > 0) {
+                    available = true;
+                    break;
+                }
+            }
+
+            if (available) {
+                button.disabled = false;
+                button.classList.remove("disabled");
+            } else {
+                button.disabled = true;
+                button.classList.add("disabled");
+                if (normalize(selectedColor) === normalize(color)) {
+                    selectedColor = "";
+                    if (colorInput) colorInput.value = "";
+                    button.classList.remove("active");
+                }
+            }
+        });
+    }
+
+    function applyVariant(variantId, variantData) {
+        if (!variantData) return;
+
+        selectedVariantId = String(variantId);
+        if (variantIdInput) variantIdInput.value = selectedVariantId;
+
+        updateVariantPrice(variantData);
+        updateStock(variantData);
+        updateVariantGallery(variantData);
+
+        if (variantData.size) {
+            selectedSize = String(variantData.size).trim();
+            if (sizeInput) sizeInput.value = selectedSize;
+        }
+
+        if (variantData.color) {
+            selectedColor = String(variantData.color).trim();
+            if (colorInput) colorInput.value = selectedColor;
+            updateSelectedColorLabel();
+        }
+
+        getSizeButtons().forEach(function (btn) {
+            btn.classList.toggle("selected", normalize(btn.dataset.size) === normalize(selectedSize));
+        });
+
+        getColorButtons().forEach(function (btn) {
+            btn.classList.toggle("active", normalize(btn.dataset.color) === normalize(selectedColor));
+        });
+
+        if (selectedColor) filterSizesByColor(selectedColor);
+        if (selectedSize) filterColorsBySize(selectedSize);
+    }
+
+    window.selectColor = function (button) {
+        if (!button || button.disabled) return;
+
+        selectedColor = (button.dataset.color || "").trim();
+        getColorButtons().forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+        if (colorInput) colorInput.value = selectedColor;
+
+        updateSelectedColorLabel();
+        filterSizesByColor(selectedColor);
+
+        if (selectedSize) {
+            const variant = findVariant(selectedSize, selectedColor);
+            if (variant) {
+                applyVariant(variant.id, variant.data);
+                return;
+            }
+            selectedSize = "";
+            if (sizeInput) sizeInput.value = "";
+            getSizeButtons().forEach(btn => btn.classList.remove("selected"));
+        }
+
+        const availableSizes = getSizeButtons().filter(btn => !btn.disabled && !btn.classList.contains("oos-size"));
+        if (availableSizes.length === 1) {
+            selectSize(availableSizes[0]);
+        } else {
+            selectedVariantId = "";
+            if (variantIdInput) variantIdInput.value = "";
+        }
+    };
+
+    window.selectSize = function (button) {
+        if (!button || button.disabled) return;
+
+        selectedSize = (button.dataset.size || "").trim();
+        getSizeButtons().forEach(btn => btn.classList.remove("selected"));
+        button.classList.add("selected");
+        if (sizeInput) sizeInput.value = selectedSize;
+
+        filterColorsBySize(selectedSize);
+
+        if (selectedColor) {
+            const variant = findVariant(selectedSize, selectedColor);
+            if (variant) {
+                applyVariant(variant.id, variant.data);
+                return;
+            }
+            selectedColor = "";
+            if (colorInput) colorInput.value = "";
+            getColorButtons().forEach(btn => btn.classList.remove("active"));
+        }
+
+        const availableColors = getColorButtons().filter(btn => !btn.disabled);
+        if (availableColors.length === 1) {
+            selectColor(availableColors[0]);
+        } else {
+            selectedVariantId = "";
+            if (variantIdInput) variantIdInput.value = "";
+        }
+    };
+
+    window.validateSelection = function () {
+        if (!hasVariants) return true;
+
+        if (!selectedSize) {
+            if (sizeInput && sizeInput.value.trim()) {
+                selectedSize = sizeInput.value.trim();
+            } else {
+                alert("Please select a size.");
+                return false;
+            }
+        }
+
+        if (hasColorVariants && !selectedColor) {
+            if (colorInput && colorInput.value.trim()) {
+                selectedColor = colorInput.value.trim();
+            } else {
+                alert("Please select a color.");
+                return false;
+            }
+        }
+
+        let variant = null;
+        if (hasColorVariants) {
+            variant = findVariant(selectedSize, selectedColor);
+        } else {
+            for (const [id, data] of Object.entries(variantGallery)) {
+                if (normalize(data.size) === normalize(selectedSize)) {
+                    variant = { id, data };
+                    break;
+                }
+            }
+        }
+
+        if (!variant) {
+            alert("The selected size and color combination is not available.");
+            return false;
+        }
+
+        const stock = parseInt(variant.data.stock ?? 0, 10);
+        if (stock <= 0) {
+            alert("Sorry, this variant is out of stock.");
+            return false;
+        }
+
+        let quantity = 1;
+        if (quantityInput) {
+            quantity = parseInt(quantityInput.value || 1, 10);
+            if (isNaN(quantity) || quantity < 1) {
+                quantity = 1;
+                quantityInput.value = 1;
+            }
+            if (quantity > stock) {
+                alert(`Only ${stock} item${stock === 1 ? "" : "s"} available.`);
+                quantityInput.value = stock;
+                return false;
+            }
+        }
+
+        selectedVariantId = String(variant.id);
+        if (variantIdInput) variantIdInput.value = selectedVariantId;
+        if (sizeInput) sizeInput.value = selectedSize;
+        if (colorInput) colorInput.value = selectedColor;
+
+        return true;
+    };
+
+    window.adjustQty = function (change) {
+        if (!quantityInput) return;
+
+        let quantity = parseInt(quantityInput.value || 1, 10);
+        if (isNaN(quantity)) quantity = 1;
+        quantity += change;
+        if (quantity < 1) quantity = 1;
+
+        let maxStock = Infinity;
+        if (selectedVariantId) {
+            const variant = getVariantById(selectedVariantId);
+            if (variant) maxStock = parseInt(variant.data.stock ?? 0, 10);
+        }
+
+        if (maxStock !== Infinity && maxStock > 0 && quantity > maxStock) {
+            quantity = maxStock;
+        }
+
+        quantityInput.value = quantity;
+    };
+
+    window.validateSizeBuyNow = function () {
+        return validateSelection();
+    };
+
+    function initializeColor() {
+        const colorButtons = getColorButtons();
+        if (!colorButtons.length) return;
+
+        let firstColor = colorButtons.find(btn => btn.classList.contains("active") && !btn.disabled);
+        if (!firstColor) firstColor = colorButtons.find(btn => !btn.disabled);
+
+        if (firstColor) {
+            selectedColor = (firstColor.dataset.color || "").trim();
+            firstColor.classList.add("active");
+            if (colorInput) colorInput.value = selectedColor;
+            updateSelectedColorLabel();
+            filterSizesByColor(selectedColor);
+        }
+    }
+
+    function initializeSize() {
+        const sizeButtons = getSizeButtons();
+        if (!sizeButtons.length) return;
+
+        const availableSizes = sizeButtons.filter(btn => !btn.disabled && !btn.classList.contains("oos-size"));
+        if (availableSizes.length === 1) {
+            selectSize(availableSizes[0]);
+            return;
+        }
+
+        const activeSize = sizeButtons.find(btn => btn.classList.contains("selected") && !btn.disabled);
+        if (activeSize) {
+            selectedSize = (activeSize.dataset.size || "").trim();
+            if (sizeInput) sizeInput.value = selectedSize;
+            filterColorsBySize(selectedSize);
+        }
+    }
+
+    function initializeInputs() {
+        if (sizeInput && sizeInput.value.trim()) selectedSize = sizeInput.value.trim();
+        if (colorInput && colorInput.value.trim()) selectedColor = colorInput.value.trim();
+    }
+
+    /* ---------------------------------------------------------
+       INITIAL PAGE INITIALIZATION
+       --------------------------------------------------------- */
+
+    initializeInputs();
+    initializeColor();
+    initializeSize();
+
+    if (selectedSize && selectedColor) {
+        const variant = findVariant(selectedSize, selectedColor);
+        if (variant) applyVariant(variant.id, variant.data);
+    } else if (selectedSize && !hasColorVariants) {
+        for (const [id, data] of Object.entries(variantGallery)) {
+            if (normalize(data.size) === normalize(selectedSize)) {
+                applyVariant(id, data);
+                break;
+            }
+        }
+    }
+
+    updateSelectedColorLabel();
 });
 
-const hasVariants = {{ variants|length }} > 0;
-const hasColorVariants = {{ available_colors|length }} > 0;
-let selectedSize      = '';
-let selectedColor     = '';
-let selectedVariantId = null;
+/* ---------------------------------------------------------
+   GALLERY: zoom, slide navigation, accordion, wishlist toast,
+   review form toggle, and star-rating picker.
+   These sit outside the DOMContentLoaded block above so they
+   remain callable from inline onclick= attributes throughout
+   the template.
+   --------------------------------------------------------- */
 
-function getCsrfToken() {
-  const el = document.querySelector('[name=csrfmiddlewaretoken]');
-  if (el) return el.value;
-  const match = document.cookie.match('(^|;)\\s*csrftoken=([^;]+)');
-  return match ? decodeURIComponent(match[2]) : null;
+let currentSlide = 0;
+const galleryImages = [
+    {% for img in images %}"{{ img.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}
+];
+
+function goToSlide(index) {
+    index = parseInt(index, 10);
+    if (isNaN(index) || !galleryImages.length) return;
+    currentSlide = ((index % galleryImages.length) + galleryImages.length) % galleryImages.length;
+
+    const mainImg = document.getElementById("mainImg");
+    if (mainImg) mainImg.src = galleryImages[currentSlide];
+
+    document.querySelectorAll(".gallery-dot").forEach((dot, i) => {
+        dot.classList.toggle("active", i === currentSlide);
+    });
+    document.querySelectorAll(".gallery-thumb").forEach((thumb, i) => {
+        thumb.classList.toggle("active", i === currentSlide);
+    });
 }
 
-const variantGallery = {{ variant_gallery_json|safe }};
-const sizeColorMap = JSON.parse('{{ size_color_map_json|escapejs }}');
+function changeSlide(direction) {
+    goToSlide(currentSlide + direction);
+}
 
-function selectColor(btn) {
-  document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  selectedColor = (btn.dataset.color || '').trim();
-  document.getElementById('colorInput').value = selectedColor;
-  filterSizesByColor(selectedColor);
-  updateSelectedCombination();
-
-  if (selectedSize) {
-    const variantId = findVariantId(selectedSize, selectedColor);
-    const vdata = variantId ? variantGallery[variantId] : null;
-    if (vdata) {
-      selectedVariantId = variantId;
-      if (vdata.images.length) {
-        imageUrls.length = 0;
-        vdata.images.forEach(u => imageUrls.push(u));
-        currentSlide = 0;
-        document.getElementById('mainImg').src = imageUrls[0];
-      }
-      const priceEl = document.querySelector('.price-now');
-      if (priceEl) priceEl.textContent = '₹' + parseFloat(vdata.price).toFixed(2);
-      const qtyEl = document.getElementById('qtyInput');
-      if (qtyEl) {
-        qtyEl.max = Math.min(parseInt(vdata.stock) || 1, {{ max_qty }});
-        if (parseInt(qtyEl.value) > qtyEl.max) qtyEl.value = qtyEl.max;
-      }
+function toggleZoom(event, el) {
+    el.classList.toggle("zoomed");
+    if (el.classList.contains("zoomed")) {
+        const rect = el.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        const img = el.querySelector("img");
+        if (img) {
+            img.style.transformOrigin = `${x}% ${y}%`;
+            img.style.transform = "scale(2)";
+        }
+    } else {
+        const img = el.querySelector("img");
+        if (img) img.style.transform = "scale(1)";
     }
-  }
-}
-
-function filterSizesByColor(color) {
-  document.querySelectorAll('.size-btn').forEach(btn => {
-    const btnColors = btn.dataset.colors ? btn.dataset.colors.split(',').map(s=>s.trim()).filter(Boolean) : [];
-    const available = !color || btnColors.includes((color||'').trim());
-    btn.classList.toggle('oos-size', !available);
-    btn.disabled = !available;
-  });
-}
-
-function filterColorsBySize(size) {
-  const allowedColors = sizeColorMap[size] || [];
-  document.querySelectorAll('.color-btn').forEach(btn => {
-    const color = btn.dataset.color || '';
-    const available = !allowedColors.length || allowedColors.includes(color);
-    btn.disabled = !available;
-    btn.classList.toggle('oos-size', !available);
-  });
-}
-
-function selectSize(btn) {
-  if (btn.classList.contains('oos-size')) return;
-  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  selectedSize = btn.dataset.size;
-  document.getElementById('sizeInput').value = selectedSize;
-
-  if (hasColorVariants) {
-    filterColorsBySize(selectedSize);
-    const availableColors = sizeColorMap[selectedSize] || [];
-    if (!selectedColor && availableColors.length === 1 && availableColors[0]) {
-      const colorBtn = document.querySelector(`.color-btn[data-color="${availableColors[0]}"]`);
-      if (colorBtn) {
-        selectColor(colorBtn);
-      }
-    } else if (selectedColor && !availableColors.includes(selectedColor)) {
-      selectedColor = '';
-      document.getElementById('colorInput').value = '';
-      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
-    }
-  }
-
-  const variantId = findVariantId(selectedSize, selectedColor);
-  const vdata = variantId ? variantGallery[variantId] : null;
-  if (vdata) {
-    selectedVariantId = variantId;
-    if (vdata.images.length) {
-      imageUrls.length = 0;
-      vdata.images.forEach(u => imageUrls.push(u));
-      currentSlide = 0;
-      document.getElementById('mainImg').src = imageUrls[0];
-    }
-    const priceEl = document.querySelector('.price-now');
-    if (priceEl) priceEl.textContent = '₹' + parseFloat(vdata.price).toFixed(2);
-  }
-
-  const stock  = parseInt(btn.dataset.stock) || 1;
-  const maxQty = Math.min(stock, {{ max_qty }});
-  const qtyEl  = document.getElementById('qtyInput');
-  if (qtyEl) { qtyEl.max = maxQty; if (parseInt(qtyEl.value) > maxQty) qtyEl.value = maxQty; }
-  document.getElementById('sizeError').style.display = 'none';
-}
-
-function updateSelectedCombination() {
-  const colorLabel = document.getElementById('selectedColorLabel');
-  if (colorLabel) colorLabel.textContent = selectedColor || 'Select a color';
-}
-
-function findVariantId(size, color) {
-  return Object.keys(variantGallery).find(key => {
-    const v = variantGallery[key];
-    if (v.size !== size) return false;
-    if (!hasColorVariants) return true;
-    if (!color) return false;
-    return v.color === color;
-  }) || null;
-}
-
-function validateSelection() {
-  if (!hasVariants) {
-    return true;
-  }
-
-  if (!selectedSize) {
-    document.getElementById('sizeError').style.display = 'block';
-    return false;
-  }
-
-  if (hasColorVariants && !selectedColor) {
-    document.getElementById('sizeError').style.display = 'block';
-    return false;
-  }
-
-  return true;
-}
-
-function adjustQty(dir) {
-  const inp = document.getElementById('qtyInput');
-  if (!inp) return;
-  let v = parseInt(inp.value) + dir;
-  v = Math.max(1, Math.min(v, parseInt(inp.max)||{{ max_qty }}));
-  inp.value = v;
-}
-
-function validateSizeBuyNow() {
-  return validateSelection();
 }
 
 function toggleAccordion(head) {
-  head.classList.toggle('open');
-  head.nextElementSibling.classList.toggle('open');
+    const body = head.nextElementSibling;
+    head.classList.toggle("open");
+    if (body) body.classList.toggle("open");
 }
 
 function toggleReviewForm() {
-  const w = document.getElementById('reviewFormWrap');
-  w.style.display = w.style.display === 'none' ? 'block' : 'none';
-  if (w.style.display==='block') w.scrollIntoView({behavior:'smooth',block:'start'});
-}
-let chosenRating = 0;
-function setRating(val) { chosenRating=val; document.getElementById('ratingInput').value=val; renderStars(val); }
-function hoverRating(val) { renderStars(val); }
-function resetHover()     { renderStars(chosenRating); }
-function renderStars(val) {
-  document.querySelectorAll('.sp-star').forEach(s => s.classList.toggle('lit', parseInt(s.dataset.val)<=val));
+    const wrap = document.getElementById("reviewFormWrap");
+    if (!wrap) return;
+    wrap.style.display = wrap.style.display === "none" ? "block" : "none";
 }
 
-document.addEventListener('keydown', e => {
-  if (e.key==='ArrowLeft')  changeSlide(-1);
-  if (e.key==='ArrowRight') changeSlide(1);
-  if (e.key==='Escape'&&zoomed) {
-    zoomed=false;
-    const main=document.getElementById('galleryMain');
-    if (main) main.classList.remove('zoomed');
-    const img=document.getElementById('mainImg');
-    if (img) { img.style.transform=''; img.style.transformOrigin=''; }
-  }
-});
+let currentRating = 0;
+function setRating(val) {
+    currentRating = parseInt(val, 10);
+    const ratingInput = document.getElementById("ratingInput");
+    if (ratingInput) ratingInput.value = currentRating;
+    paintStars(currentRating);
+}
+function hoverRating(val) {
+    paintStars(parseInt(val, 10));
+}
+function resetHover() {
+    paintStars(currentRating);
+}
+function paintStars(count) {
+    document.querySelectorAll(".sp-star").forEach((star) => {
+        const val = parseInt(star.dataset.val, 10);
+        star.classList.toggle("lit", val <= count);
+    });
+}
+
+function showToast(message, type) {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = "toast show toast-" + (type || "success");
+    setTimeout(() => { toast.className = "toast"; }, 2500);
+}
 
 function toggleWishlist(button, slug) {
-  const csrfToken = getCsrfToken();
-  if (!csrfToken) { window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname); return; }
+    const form = document.getElementById("wishlistForm");
+    if (!form) return;
 
-  fetch(`/wishlist/toggle/${slug}/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': csrfToken,
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    body: JSON.stringify({
-      size:  selectedSize  || null,   
-      color: selectedColor || null    
+    fetch(form.action, {
+        method: "POST",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": form.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: new FormData(form)
     })
-  })
-    .then(response => response.json().then(data => ({ response, data })))
-    .then(({ response, data }) => {
-        if (!response.ok || !data.success) {
-          showToast(data.error || 'Unable to update wishlist', 'error');
-          return;
-        }
-        // sync all buttons for this product (cards, detail page, etc.)
-        document.querySelectorAll(`[data-slug="${slug}"]`).forEach(b => {
-          try {
-            const svg = b.querySelector('svg');
-            if (data.is_wishlisted) {
-              b.classList.add('wishlisted');
-              if (svg) svg.setAttribute('fill', 'var(--terra)');
-            } else {
-              b.classList.remove('wishlisted');
-              if (svg) svg.setAttribute('fill', 'none');
-            }
-          } catch (e) {}
-        });
-
-        if (data.is_wishlisted) showToast(data.message || 'Added to wishlist!', 'success');
-        else showToast(data.message || 'Removed from wishlist', 'info');
-        if (typeof window.triggerWishlistUpdate === 'function') window.triggerWishlistUpdate();
+    .then(res => res.json())
+    .then(data => {
+        const isWishlisted = !!(data && data.in_wishlist);
+        button.classList.toggle("wishlisted", isWishlisted);
+        const svg = button.querySelector("svg");
+        if (svg) svg.setAttribute("fill", isWishlisted ? "var(--terra)" : "none");
+        showToast(isWishlisted ? "Added to wishlist" : "Removed from wishlist", "success");
     })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Please login to add to wishlist', 'error');
+    .catch(() => {
+        showToast("Could not update wishlist", "error");
     });
 }
-function selectColorCard(button, productUuid, color) {
-    // Update active state
-    const parent = button.closest('.color-options');
-    parent.querySelectorAll('.color-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    button.classList.add('active');
-
-    // Get all elements for this product
-    const productCard  = button.closest('.product-card');
-    const sizeBadges   = productCard.querySelectorAll('.size-badge');
-    const priceElement = productCard.querySelector('.card-price .now');
-    const stockElement = productCard.querySelector('.stock-label');
-    const addToCartBtn = productCard.querySelector('.card-add');
-
-    let firstVariant = null;
-    let hasStock = false;
-    let variantsForColor = [];
-
-    // Show/hide sizes based on selected color
-    sizeBadges.forEach(el => {
-        const variantColor = el.dataset.color || '';
-        if (variantColor === color) {
-            el.style.display = 'inline-block';
-            variantsForColor.push(el);
-            if (!firstVariant) {
-                firstVariant = el;
-            }
-            if (parseInt(el.dataset.stock) > 0) {
-                hasStock = true;
-            }
-        } else {
-            el.style.display = 'none';
-        }
-    });
-
-    // Update price and stock based on first available size
-    if (firstVariant) {
-        const price = parseFloat(firstVariant.dataset.price);
-        if (priceElement) {
-            priceElement.textContent = '₹' + price.toFixed(2);
-        }
-
-        const stock = parseInt(firstVariant.dataset.stock);
-        if (stock > 5) {
-            stockElement.innerHTML = '<span class="stock-dot dot-in"></span> In Stock';
-        } else if (stock > 0) {
-            stockElement.innerHTML = '<span class="stock-dot dot-low"></span> Low Stock';
-        } else {
-            stockElement.innerHTML = '<span class="stock-dot dot-out"></span> Out of Stock';
-        }
-
-        // Auto-select the first available size
-        if (hasStock) {
-            const firstAvailable = Array.from(sizeBadges).find(el =>
-                el.dataset.color === color && parseInt(el.dataset.stock) > 0
-            );
-            if (firstAvailable) {
-                selectSize(firstAvailable, productUuid, firstAvailable.dataset.size, firstAvailable.dataset.price);
-            }
-        } else {
-            // No stock for this color - disable add to cart
-            if (addToCartBtn) {
-                addToCartBtn.disabled = true;
-                addToCartBtn.textContent = 'Out of Stock';
-            }
-        }
-    }
-}
-
 </script>
 {% endblock %}
