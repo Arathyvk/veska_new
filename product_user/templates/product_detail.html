@@ -1,0 +1,1003 @@
+{% extends "user_base.html" %}
+{% load static %}
+{% block title %}{{ product.name }} · Veska{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#faf8f5;--warm-white:#fff;--parchment:#f2ede6;--sand:#e8dfd3;--blush:#e9d5c8;
+  --terra:#b56744;--terra-deep:#8f4f31;--terra-pale:#f7ede5;
+  --ink:#1e1a17;--charcoal:#2e2925;--muted:#7a6f66;--muted-lt:#b0a699;
+  --border:#e0d9d0;--border-lt:#ece6de;
+  --success:#3a7d5a;--success-pale:#eaf4ee;
+  --warning:#c47f17;--warning-pale:#fef8ec;
+  --danger:#b53333;--danger-pale:#fdf0f0;
+  --shadow-xs:0 1px 3px rgba(30,26,23,.06);--shadow-sm:0 2px 8px rgba(30,26,23,.08);
+  --shadow-md:0 6px 24px rgba(30,26,23,.1);--shadow-lg:0 16px 48px rgba(30,26,23,.14);
+  --radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-xl:24px;
+  --transition:all .2s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:var(--cream);color:var(--ink)}
+a{text-decoration:none;color:inherit}
+button,input,textarea{font-family:var(--body)}
+
+.detail-page{padding-bottom:100px;min-height:100vh;background:var(--cream)}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.breadcrumbs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:20px 0 24px;font-size:12px;color:var(--muted)}
+.breadcrumbs a{color:var(--muted);transition:color .15s}.breadcrumbs a:hover{color:var(--terra)}
+.breadcrumbs .sep{color:var(--muted-lt);font-size:10px}.breadcrumbs .current{color:var(--ink);font-weight:500}
+
+.messages-stack{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.msg-bar{padding:13px 18px;border-radius:var(--radius-md);font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:10px;line-height:1.4}
+.msg-bar.warning{background:var(--warning-pale);color:var(--warning);border:1px solid rgba(196,127,23,.2)}
+.msg-bar.success{background:var(--success-pale);color:var(--success);border:1px solid rgba(58,125,90,.2)}
+.msg-bar.error{background:var(--danger-pale);color:var(--danger);border:1px solid rgba(181,51,51,.2)}
+
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+@media(max-width:900px){.detail-grid{grid-template-columns:1fr;gap:32px}}
+
+.gallery-main{position:relative;border-radius:var(--radius-xl);overflow:hidden;
+  background:var(--parchment);border:1px solid var(--border);cursor:zoom-in;
+  user-select:none;aspect-ratio:4/5;box-shadow:var(--shadow-md)}
+.gallery-main img{width:100%;height:100%;object-fit:cover;transition:transform .1s ease;
+  pointer-events:none;display:block}
+.gallery-main.zoomed{cursor:zoom-out}
+.zoom-hint{position:absolute;bottom:14px;right:14px;
+  background:rgba(30,26,23,.55);backdrop-filter:blur(6px);color:#fff;border-radius:40px;
+  font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
+  padding:5px 12px;display:flex;align-items:center;gap:5px;pointer-events:none;transition:opacity .3s}
+.gallery-main.zoomed .zoom-hint{opacity:0}
+.zoom-hint svg{width:11px;height:11px}
+.gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);
+  width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.88);
+  backdrop-filter:blur(6px);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:var(--transition);z-index:2;box-shadow:var(--shadow-sm)}
+.gallery-arrow:hover{background:#fff;border-color:var(--terra)}
+.gallery-arrow svg{width:14px;height:14px;color:var(--charcoal)}
+.gallery-arrow.prev{left:12px}.gallery-arrow.next{right:12px}.gallery-arrow.hidden{display:none}
+.gallery-dots{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px}
+.gallery-dot{width:6px;height:6px;border-radius:50%;background:var(--sand);border:none;padding:0;
+  cursor:pointer;transition:var(--transition)}
+.gallery-dot.active{background:var(--terra);width:18px;border-radius:4px}
+.gallery-thumbs{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.gallery-thumb{width:62px;height:72px;border-radius:var(--radius-sm);overflow:hidden;
+  border:2px solid var(--border-lt);cursor:pointer;transition:var(--transition);flex-shrink:0}
+.gallery-thumb:hover{border-color:var(--terra)}
+.gallery-thumb.active{border-color:var(--terra);box-shadow:0 0 0 1px var(--terra)}
+.gallery-thumb img{width:100%;height:100%;object-fit:cover}
+.gallery-no-img{aspect-ratio:4/5;border-radius:var(--radius-xl);background:var(--parchment);
+  border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;color:var(--muted-lt);font-size:13px}
+
+.info-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--terra);background:var(--terra-pale);
+  border:1px solid var(--blush);border-radius:40px;padding:4px 12px;margin-bottom:14px}
+.product-name{font-family:var(--head);font-size:clamp(28px,4vw,42px);font-weight:600;
+  color:var(--ink);line-height:1.1;letter-spacing:-.3px;margin-bottom:14px}
+.rating-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.stars{display:flex;gap:2px}
+.star{font-size:15px;line-height:1}
+.star.full{color:#e8a838}.star.half{color:#e8a838;opacity:.6}.star.empty{color:var(--sand)}
+.rating-avg{font-size:14px;font-weight:700;color:var(--ink)}
+.rating-count{font-size:13px;color:var(--muted)}
+.rating-count a{color:var(--terra);text-decoration:underline;text-underline-offset:3px}
+
+.price-block{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.price-now{font-family:var(--head);font-size:34px;font-weight:700;color:var(--charcoal);letter-spacing:-.5px}
+.price-original{font-size:18px;color:var(--muted-lt);text-decoration:line-through;font-weight:400}
+.discount-badge{display:inline-flex;align-items:center;background:var(--success-pale);color:var(--success);
+  border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;letter-spacing:.3px}
+.savings-line{font-size:12.5px;color:var(--success);font-weight:500;margin-bottom:18px}
+
+.stock-badge{display:inline-flex;align-items:center;gap:6px;border-radius:40px;padding:5px 13px;
+  font-size:11.5px;font-weight:600;margin-bottom:20px}
+.stock-badge .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.stock-in .dot{background:var(--success)}.stock-in{background:var(--success-pale);color:var(--success)}
+.stock-low .dot{background:var(--warning)}.stock-low{background:var(--warning-pale);color:var(--warning)}
+.stock-out .dot{background:var(--danger)}.stock-out{background:var(--danger-pale);color:var(--danger)}
+
+.selector-label{font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--charcoal);margin-bottom:10px}
+.size-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.size-btn{min-width:64px;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--warm-white);color:var(--ink);font-size:13px;font-weight:500;
+  cursor:pointer;transition:var(--transition);text-align:center}
+.size-btn:hover:not(.oos-size){border-color:var(--terra);color:var(--terra)}
+.size-btn.selected{border-color:var(--terra);background:var(--terra);color:#fff;font-weight:600}
+.size-btn.oos-size{opacity:.45;cursor:not-allowed;text-decoration:line-through;text-decoration-color:var(--muted-lt)}
+
+.add-cart-form{margin-bottom:0}
+.qty-row{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.qty-ctrl{display:flex;align-items:center;border:1.5px solid var(--border);
+  border-radius:var(--radius-md);overflow:hidden;background:var(--warm-white)}
+.qty-btn-ui{width:38px;height:40px;border:none;background:none;font-size:18px;color:var(--ink);
+  cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center}
+.qty-btn-ui:hover{background:var(--parchment)}
+.qty-input{width:48px;text-align:center;font-size:14px;font-weight:600;border:none;
+  border-left:1.5px solid var(--border);border-right:1.5px solid var(--border);
+  background:none;color:var(--ink);outline:none}
+.qty-label{font-size:12px;color:var(--muted)}
+/* ── COLOR SELECTION ── */
+.card-colors{margin-bottom:8px}
+.color-label{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px}
+.color-options{display:flex;flex-wrap:wrap;gap:4px}
+.color-btn{
+  display:flex;align-items:center;gap:3px;padding:2px 8px 2px 4px;
+  border:1.5px solid var(--border);border-radius:20px;background:var(--warm-white);
+  cursor:pointer;transition:all .2s;font-size:9px;font-weight:500;color:var(--muted)
+}
+.color-btn:hover{border-color:var(--terra);background:var(--terra-pale)}
+.color-btn.active{border-color:var(--terra);background:var(--terra-pale);color:var(--terra-deep);font-weight:600}
+.color-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,0.08);flex-shrink:0}
+.color-name{font-size:8px;text-transform:uppercase}
+.cta-row{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap}
+.btn-add-cart{flex:1;min-width:160px;background:var(--charcoal);color:#fff;
+  border:none;border-radius:var(--radius-md);font-family:var(--body);font-size:13.5px;
+  font-weight:600;padding:14px 24px;letter-spacing:.4px;cursor:pointer;transition:var(--transition);
+  display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-add-cart:hover{background:var(--terra)}
+.btn-add-cart:disabled{background:var(--sand);color:var(--muted);cursor:not-allowed}
+.btn-buy-now{flex:1;min-width:140px;background:var(--terra);color:#fff;
+  border:none;border-radius:var(--radius-md);font-family:var(--body);font-size:13.5px;
+  font-weight:600;padding:14px 24px;letter-spacing:.4px;cursor:pointer;transition:var(--transition);
+  display:flex;align-items:center;justify-content:center;gap:9px;text-decoration:none}
+.btn-buy-now:hover{background:var(--terra-deep)}
+.btn-wishlist{width:50px;height:50px;border-radius:var(--radius-md);
+  border:1.5px solid var(--border);background:var(--warm-white);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:var(--transition);flex-shrink:0}
+.btn-wishlist:hover{border-color:var(--terra);background:var(--terra-pale)}
+.btn-wishlist svg{width:18px;height:18px;color:var(--muted);transition:color .15s}
+.btn-wishlist:hover svg,.btn-wishlist.wishlisted svg{color:var(--terra)}
+.btn-wishlist.wishlisted svg{fill:var(--terra)}
+.soldout-notice{background:var(--danger-pale);border:1px solid rgba(181,51,51,.2);
+  border-radius:var(--radius-md);padding:16px 18px;display:flex;flex-direction:column;
+  gap:6px;margin-bottom:24px}
+.soldout-notice .so-title{font-size:15px;font-weight:700;color:var(--danger);display:flex;align-items:center;gap:8px}
+.soldout-notice .so-body{font-size:13px;color:var(--muted);line-height:1.6}
+.divider{
+    height:1px !important;
+    background:#e8e8e8 !important;
+    margin:20px 0 !important;
+     display:none;
+}
+.highlights-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.highlights-list li{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:var(--charcoal);line-height:1.5}
+.highlight-check{width:18px;height:18px;background:var(--terra-pale);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.highlight-check svg{width:10px;height:10px;color:var(--terra)}
+.accordion-item{border-bottom:1px solid var(--border-lt)}
+.accordion-head{display:flex;align-items:center;justify-content:space-between;padding:14px 0;
+  cursor:pointer;user-select:none;font-size:13px;font-weight:600;color:var(--charcoal);transition:color .15s}
+.accordion-head:hover{color:var(--terra)}
+.accordion-head svg{width:14px;height:14px;color:var(--muted-lt);transition:transform .22s;flex-shrink:0}
+.accordion-head.open svg{transform:rotate(180deg)}
+.accordion-body{font-size:13.5px;color:var(--muted);line-height:1.75;padding-bottom:16px;display:none}
+.accordion-body.open{display:block}
+
+.section{margin-top:64px}
+.section-head{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.section-title{font-family:var(--head);font-size:28px;font-weight:600;
+  color:var(--ink);display:flex;align-items:baseline;gap:12px}
+.section-title span{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400}
+.rating-summary{display:flex;gap:32px;flex-wrap:wrap;background:var(--warm-white);
+  border:1px solid var(--border);border-radius:var(--radius-xl);padding:24px 28px;
+  margin-bottom:28px;align-items:center;box-shadow:var(--shadow-xs)}
+.rating-big{text-align:center;min-width:80px}
+.rating-big .avg-num{font-family:var(--head);font-size:52px;font-weight:700;color:var(--ink);line-height:1}
+.rating-big .avg-label{font-size:11px;color:var(--muted);margin-top:6px}
+.rating-bars{flex:1;display:flex;flex-direction:column;gap:8px;min-width:160px}
+.rating-bar-row{display:flex;align-items:center;gap:8px}
+.rb-label{font-size:11.5px;color:var(--muted);width:28px;text-align:right;flex-shrink:0}
+.rb-track{flex:1;height:6px;background:var(--sand);border-radius:3px;overflow:hidden}
+.rb-fill{height:100%;background:var(--terra);border-radius:3px}
+.rb-count{font-size:11px;color:var(--muted);width:20px}
+.review-card{background:var(--warm-white);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:14px;box-shadow:var(--shadow-xs)}
+.rc-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.rc-meta{display:flex;flex-direction:column;gap:4px}
+.rc-name{font-size:14px;font-weight:600;color:var(--ink)}
+.rc-date{font-size:11.5px;color:var(--muted-lt)}
+.rc-stars{display:flex;gap:2px}
+.rc-star{font-size:13px}
+.rc-star.full{color:#e8a838}.rc-star.empty{color:var(--sand)}
+.rc-body{font-size:13.5px;color:var(--charcoal);line-height:1.7}
+.no-reviews{text-align:center;padding:48px 24px;background:var(--warm-white);
+  border:1px solid var(--border);border-radius:var(--radius-xl);color:var(--muted);font-size:14px}
+.star-picker{display:flex;gap:4px;cursor:pointer}
+.sp-star{font-size:28px;color:var(--sand);transition:color .12s;line-height:1;user-select:none}
+.sp-star.lit{color:#e8a838}
+
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}
+.rel-card{background:var(--warm-white);border:1px solid var(--border);
+  border-radius:var(--radius-lg);overflow:hidden;
+  transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s;display:block}
+.rel-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.rel-img{aspect-ratio:4/5;overflow:hidden;background:var(--parchment)}
+.rel-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
+.rel-card:hover .rel-img img{transform:scale(1.06)}
+.rel-body{padding:14px 14px 16px}
+.rel-cat{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--terra);margin-bottom:4px}
+.rel-name{font-family:var(--head);font-size:14px;font-weight:500;line-height:1.35;
+  color:var(--ink);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rel-price{font-family:var(--head);font-size:16px;font-weight:700;color:var(--charcoal)}
+
+@keyframes reveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.gallery{animation:reveal .4s ease both}
+.product-info{animation:reveal .4s ease .1s both}
+.gallery-main{
+    background:transparent !important;
+    border:none !important;
+    box-shadow:none !important;
+}
+
+.gallery-main img{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:contain;
+}
+.toast{
+    display:none;
+}
+
+.toast.show{
+    display:flex;
+    position:fixed;
+    bottom:32px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--charcoal);
+    color:#fff;
+    border-radius:10px;
+    padding:13px 24px;
+    align-items:center;
+    justify-content:center;
+    z-index:99999;
+}
+.toast.toast-success{background:var(--success)}
+.toast.toast-error{background:var(--danger)}
+</style>
+
+<div class="detail-page">
+<div class="container">
+
+  {% if messages %}
+  <div class="messages-stack">
+    {% for message in messages %}
+    <div class="msg-bar {{ message.tags }}">
+      {% if message.tags == 'success' %}{% elif message.tags == 'warning' %}{% elif message.tags == 'error' %}{% else %}{% endif %}
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <nav class="breadcrumbs">
+    <a href="{% url 'home' %}">Home</a><span class="sep">›</span>
+    <a href="{% url 'product_shop' %}">Shop</a><span class="sep">›</span>
+    <a href="{% url 'product_shop' %}?category={{ product.category }}">{{ category_display }}</a>
+    <span class="sep">›</span>
+    <span class="current">{{ product.name }}</span>
+  </nav>
+
+  <div class="detail-grid">
+
+    <div class="gallery">
+      {% if images %}
+        <div class="gallery-main" id="galleryMain" onclick="toggleZoom(event,this)">
+          <img id="mainImg" src="{{ images.0.image.url }}" alt="{{ product.name }}">
+          {% if images|length > 1 %}
+          <button class="gallery-arrow prev" onclick="event.stopPropagation();changeSlide(-1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="gallery-arrow next" onclick="event.stopPropagation();changeSlide(1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          {% endif %}
+          <div class="zoom-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            Click to zoom
+          </div>
+        </div>
+
+        {% if images|length > 1 %}
+        <div class="gallery-dots">
+          {% for img in images %}
+          <button class="gallery-dot {% if forloop.first %}active{% endif %}"
+                  onclick="goToSlide('{{ forloop.counter0 }}')"></button>
+          {% endfor %}
+        </div>
+        <div class="gallery-thumbs">
+          {% for img in images %}
+          <div class="gallery-thumb {% if forloop.first %}active{% endif %}"
+               onclick="goToSlide('{{ forloop.counter0 }}')">
+            <img src="{{ img.image.url }}" alt="{{ product.name }}" loading="lazy">
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+      {% else %}
+        <div class="gallery-no-img">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" width="40" height="40" opacity=".4">
+            <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+          </svg>
+          No image available
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="product-info">
+
+      <div class="info-badge">{{ category_display }}</div>
+      <h1 class="product-name">{{ product.name }}</h1>
+
+      <div class="rating-row">
+        <div class="stars">
+          {% for i in "12345" %}
+            {% if avg_rating >= forloop.counter %}<span class="star full">★</span>
+            {% else %}<span class="star empty">★</span>{% endif %}
+          {% endfor %}
+        </div>
+        {% if review_count > 0 %}
+          <span class="rating-avg">{{ avg_rating }}</span>
+          <span class="rating-count"><a href="#reviews">({{ review_count }} review{{ review_count|pluralize }})</a></span>
+        {% else %}
+          <span class="rating-count">No reviews yet</span>
+        {% endif %}
+      </div>
+
+      <div class="price-block">
+        <span class="price-now">₹{{ product_price|floatformat:2 }}</span>
+        {% if original_price and original_price > product_price %}
+          <span class="price-original">₹{{ original_price|floatformat:2 }}</span>
+          <span class="discount-badge">{{ discount_percent }}% OFF</span>
+        {% endif %}
+      </div>
+      {% if best_offer %}
+        <div class="offer-line">Offer: {{ best_offer.name }} · {{ best_offer.discount_display }}{% if offer_discount > 0 %} · Save ₹{{ offer_discount|floatformat:2 }}{% endif %}</div>
+      {% endif %}
+      {% if savings %}
+        <div class="savings-line">You save ₹{{ savings|floatformat:2 }}</div>
+      {% endif %}
+
+      {% if stock_status == 'in_stock' %}
+        <span class="stock-badge stock-in"><span class="dot"></span>In Stock</span>
+      {% elif stock_status == 'low' %}
+        <span class="stock-badge stock-low"><span class="dot"></span>{{ stock_label }}</span>
+      {% else %}
+        <span class="stock-badge stock-out"><span class="dot"></span>Out of Stock</span>
+      {% endif %}
+
+      {% if stock_status == 'out_of_stock' %}
+      <div class="soldout-notice">
+        <div class="so-title"> Currently out of stock</div>
+        <div class="so-body">
+          Browse similar items in
+          <a href="{% url 'product_shop' %}?category={{ product.category }}" style="color:var(--terra)">{{ category_display }}</a>.
+        </div>
+      </div>
+      {% endif %}
+
+
+{% if stock_status != 'out_of_stock' %}
+<!-- Main Form for Add to Cart and Buy Now -->
+<form method="POST" action="{% url 'cart_add' product.slug %}" class="add-cart-form" data-full-page="1" id="mainCartForm" onsubmit="return validateSelection()">
+    {% csrf_token %}
+    
+    <!-- Redirect after add to cart (stay on same page) -->
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <input type="hidden" name="size" id="sizeInput" value="">
+    <input type="hidden" name="color" id="colorInput" value="">
+
+      {% if product.variants.all %}
+      <div class="card-colors">
+        <label class="color-label">Color:</label>
+        <div class="color-options">
+          {% for variant in product.variants.all|dictsort:"color" %}
+            {% ifchanged variant.color %}
+            <button type="button" class="color-btn {% if forloop.first %}active{% endif %}"
+              data-color="{{ variant.color }}"
+              data-image="{% color_image product variant.color %}"
+              data-product-uuid="{{ product.uuid }}"
+              onclick="selectColor(this)">
+              <span class="color-dot" style="background-color: {{ variant.color_hex|default:'#CCCCCC' }};"></span>
+              <span class="color-name">{{ variant.color }}</span>
+            </button>
+            {% endifchanged %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    <!-- Size selector -->
+    <div class="selector-label">SELECT SIZE</div>
+    <div class="size-grid" id="sizeGrid">
+        {% for option in size_options %}
+        <button type="button" 
+                class="size-btn{% if option.stock == 0 %} oos-size{% endif %}"
+                data-size="{{ option.size }}"
+                data-colors="{{ option.colors|join:',' }}"
+                data-stock="{{ option.stock }}"
+                {% if option.stock == 0 %}disabled{% endif %}
+                onclick="selectSize(this)">
+            {{ option.size }}
+        </button>
+        {% endfor %}
+    </div>
+    <div id="sizeError" style="display:none;color:red;margin-bottom:15px;">
+        Please select a valid color and size combination.
+    </div>
+
+    <!-- Quantity selector -->
+    <div class="selector-label">QUANTITY</div>
+    <div class="qty-row">
+        <div class="qty-ctrl">
+            <button type="button" class="qty-btn-ui" onclick="adjustQty(-1)">−</button>
+            <input type="number" name="quantity" id="qtyInput" class="qty-input" 
+                   value="1" min="1" max="{{ max_qty }}">
+            <button type="button" class="qty-btn-ui" onclick="adjustQty(1)">+</button>
+        </div>
+    </div>
+
+    <!-- Action Buttons Row -->
+    <div class="cta-row">
+        <button type="submit" name="action" value="add_cart" class="btn-add-cart">
+            Add to Cart
+        </button>
+        <button type="submit" name="action" value="buy_now" class="btn-buy-now"
+                onclick="return validateSizeBuyNow()">
+            Buy Now
+        </button>
+    </div>
+</form>
+
+<!-- Separate Wishlist Form - NOT inside the cart form -->
+<form method="POST" action="{% url 'wishlist_toggle' product.slug %}" id="wishlistForm" style="display: inline;">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.path }}">
+   <button type="button" 
+        class="btn-wishlist {% if in_wishlist %}wishlisted{% endif %}" 
+        data-slug="{{ product.slug }}"
+        onclick="toggleWishlist(this, '{{ product.slug }}')">
+    <svg viewBox="0 0 24 24" 
+         fill="{% if in_wishlist %}var(--terra){% else %}none{% endif %}"
+         stroke="currentColor" 
+         stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+</button>
+</form>
+{% endif %}
+
+      <div class="divider"></div>
+
+      {% if highlights %}
+      <ul class="highlights-list">
+        {% for h in highlights %}
+        <li>
+          <span class="highlight-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          {{ h }}
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="divider"></div>
+      {% endif %}
+
+      <div class="accordion">
+        <div class="accordion-item">
+          <div class="accordion-head open" onclick="toggleAccordion(this)">
+            Product Description
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="accordion-body open">{{ product.description|default:"No description available."|linebreaks }}</div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-head" onclick="toggleAccordion(this)">
+            Size & Fit
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="accordion-body">Runs true to size. If between sizes, size up for comfort.</div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-head" onclick="toggleAccordion(this)">
+            Shipping & Returns
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="accordion-body">Free shipping above ₹999. 30-day easy returns.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section" id="reviews">
+    <div class="section-head">
+      <div class="section-title">
+        Customer Reviews
+        {% if review_count %}<span>{{ review_count }} review{{ review_count|pluralize }}</span>{% endif %}
+      </div>
+      <button class="btn-add-cart" style="width:auto;padding:10px 20px;font-size:12.5px;border:none;cursor:pointer"
+              onclick="toggleReviewForm()">
+        Write a Review
+      </button>
+    </div>
+
+    <div id="reviewFormWrap" style="display:none;margin-bottom:28px">
+      <form method="POST" action="#"
+            style="background:var(--warm-white);border:1px solid var(--border);
+                   border-radius:var(--radius-xl);padding:24px 26px;box-shadow:var(--shadow-xs)">
+        {% csrf_token %}
+        <div style="font-family:var(--head);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:18px">Share your experience</div>
+
+        <div style="margin-bottom:16px">
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--charcoal);margin-bottom:8px">Your Rating *</div>
+          <div class="star-picker" id="starPicker" onmouseleave="resetHover()">
+            {% for i in "12345" %}
+            <span class="sp-star" data-val="{{ forloop.counter }}"
+                  onclick="setRating('{{ forloop.counter }}')"
+                  onmouseover="hoverRating('{{ forloop.counter }}')">★</span>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="rating" id="ratingInput" value="">
+        </div>
+
+        <div style="margin-bottom:14px">
+          <label style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--charcoal);display:block;margin-bottom:6px">Your Name</label>
+          <input type="text" name="author_name" placeholder="e.g. Priya S."
+                 style="width:100%;border:1.5px solid var(--border);border-radius:var(--radius-md);
+                        padding:10px 14px;font-size:13.5px;background:var(--parchment);color:var(--ink);outline:none">
+        </div>
+        <div style="margin-bottom:18px">
+          <label style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--charcoal);display:block;margin-bottom:6px">Review *</label>
+          <textarea name="body" rows="4" required placeholder="Tell us what you loved (or didn't)…"
+                    style="width:100%;border:1.5px solid var(--border);border-radius:var(--radius-md);
+                           padding:10px 14px;font-size:13.5px;background:var(--parchment);color:var(--ink);
+                           outline:none;resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="submit" class="btn-add-cart" style="width:auto;padding:11px 24px;border:none;cursor:pointer">Submit Review</button>
+          <button type="button" onclick="toggleReviewForm()"
+                  style="padding:11px 20px;border:1.5px solid var(--border);border-radius:var(--radius-md);
+                         background:none;font-size:13px;color:var(--muted);cursor:pointer">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    {% if review_count > 0 %}
+    <div class="rating-summary">
+      <div class="rating-big">
+        <div class="avg-num">{{ avg_rating }}</div>
+        <div class="stars" style="justify-content:center;margin:6px 0 4px">
+          {% for i in "12345" %}
+            {% if avg_rating >= forloop.counter %}<span class="star full">★</span>
+            {% else %}<span class="star empty">★</span>{% endif %}
+          {% endfor %}
+        </div>
+        <div class="avg-label">out of 5</div>
+      </div>
+      <div class="rating-bars">
+{% for count in rating_breakdown %}
+<div class="rating-bar-row">
+  <span class="rb-label">{{ 5|add:"-forloop.counter0" }}★</span>
+
+  <div class="rb-track">
+    <div class="rb-fill"
+         style="width:{% if review_count %}{% widthratio count review_count 100 %}{% else %}0{% endif %}%">
+    </div>
+  </div>
+
+  <span class="rb-count">{{ count }}</span>
+</div>
+{% endfor %}
+      </div>
+    </div>
+
+    {% for review in reviews %}
+
+    <div class="review-card">
+
+        <strong>{{ review.author_name }}</strong>
+
+        <p>{{ review.created_at|date:"M d, Y" }}</p>
+
+        <p>
+            {% for i in "12345"|make_list %}
+                {% if forloop.counter <= review.rating %}
+                    ★
+                {% else %}
+                    ☆
+                {% endif %}
+            {% endfor %}
+        </p>
+
+        <p>{{ review.body }}</p>
+
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="no-reviews">No reviews yet — be the first to share your experience!</div>
+    {% endif %}
+  </div>
+
+  {% if related %}
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">You May Also Like</div>
+      <a href="{% url 'product_shop' %}?category={{ product.category }}"
+         style="font-size:13px;color:var(--terra);font-weight:600">View all →</a>
+    </div>
+    <div class="related-grid">
+      {% for rel in related %}
+      <a href="{% url 'product_detail' rel.slug %}" class="rel-card">
+        <div class="rel-img">
+        {% with rvariant=rel.variants.first %}
+          {% with rimg=rvariant.images.first %}
+            {% if rimg %}
+              <img src="{{ rimg.image.url }}" alt="{{ rel.name }}" loading="lazy">
+            {% else %}
+              <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted-lt);font-size:11px">No image</div>
+            {% endif %}
+          {% endwith %}
+        {% endwith %}
+        </div>
+        <div class="rel-body">
+          <div class="rel-cat">{{ rel.category }}</div>
+          <div class="rel-name">{{ rel.name }}</div>
+          <div class="rel-price">₹{{ rel.min_price|floatformat:2 }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+
+
+<script>
+const imageUrls = [{% for img in images %}"{{ img.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+let currentSlide = 0, zoomed = false;
+
+function goToSlide(idx) {
+  if (idx < 0 || idx >= imageUrls.length) return;
+  currentSlide = idx;
+  document.getElementById('mainImg').src = imageUrls[idx];
+  document.querySelectorAll('.gallery-dot').forEach((d,i)  => d.classList.toggle('active', i===idx));
+  document.querySelectorAll('.gallery-thumb').forEach((t,i) => t.classList.toggle('active', i===idx));
+}
+function changeSlide(dir) { goToSlide((currentSlide+dir+imageUrls.length)%imageUrls.length); }
+
+function toggleZoom(e,el) {
+  zoomed = !zoomed;
+  el.classList.toggle('zoomed', zoomed);
+  if (!zoomed) { const img = document.getElementById('mainImg'); img.style.transform=''; img.style.transformOrigin=''; }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const main = document.getElementById('galleryMain');
+  const img  = document.getElementById('mainImg');
+  if (!main||!img) return;
+  main.addEventListener('mousemove', e => {
+    if (!zoomed) return;
+    const r = main.getBoundingClientRect();
+    const x = ((e.clientX-r.left)/r.width)*100;
+    const y = ((e.clientY-r.top)/r.height)*100;
+    img.style.transformOrigin=`${x}% ${y}%`;
+    img.style.transform='scale(2.5)';
+  });
+  main.addEventListener('mouseleave', () => {
+    if (zoomed) { img.style.transform=''; img.style.transformOrigin=''; zoomed=false; main.classList.remove('zoomed'); }
+  });
+});
+
+const hasVariants = {{ variants|length }} > 0;
+const hasColorVariants = {{ available_colors|length }} > 0;
+let selectedSize      = '';
+let selectedColor     = '';
+let selectedVariantId = null;
+
+function getCsrfToken() {
+  const el = document.querySelector('[name=csrfmiddlewaretoken]');
+  if (el) return el.value;
+  const match = document.cookie.match('(^|;)\\s*csrftoken=([^;]+)');
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+const variantGallery = {{ variant_gallery_json|safe }};
+const sizeColorMap = JSON.parse('{{ size_color_map_json|escapejs }}');
+
+function selectColor(btn) {
+  document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedColor = (btn.dataset.color || '').trim();
+  document.getElementById('colorInput').value = selectedColor;
+  filterSizesByColor(selectedColor);
+  updateSelectedCombination();
+
+  if (selectedSize) {
+    const variantId = findVariantId(selectedSize, selectedColor);
+    const vdata = variantId ? variantGallery[variantId] : null;
+    if (vdata) {
+      selectedVariantId = variantId;
+      if (vdata.images.length) {
+        imageUrls.length = 0;
+        vdata.images.forEach(u => imageUrls.push(u));
+        currentSlide = 0;
+        document.getElementById('mainImg').src = imageUrls[0];
+      }
+      const priceEl = document.querySelector('.price-now');
+      if (priceEl) priceEl.textContent = '₹' + parseFloat(vdata.price).toFixed(2);
+      const qtyEl = document.getElementById('qtyInput');
+      if (qtyEl) {
+        qtyEl.max = Math.min(parseInt(vdata.stock) || 1, {{ max_qty }});
+        if (parseInt(qtyEl.value) > qtyEl.max) qtyEl.value = qtyEl.max;
+      }
+    }
+  }
+}
+
+function filterSizesByColor(color) {
+  document.querySelectorAll('.size-btn').forEach(btn => {
+    const btnColors = btn.dataset.colors ? btn.dataset.colors.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    const available = !color || btnColors.includes((color||'').trim());
+    btn.classList.toggle('oos-size', !available);
+    btn.disabled = !available;
+  });
+}
+
+function filterColorsBySize(size) {
+  const allowedColors = sizeColorMap[size] || [];
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    const color = btn.dataset.color || '';
+    const available = !allowedColors.length || allowedColors.includes(color);
+    btn.disabled = !available;
+    btn.classList.toggle('oos-size', !available);
+  });
+}
+
+function selectSize(btn) {
+  if (btn.classList.contains('oos-size')) return;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedSize = btn.dataset.size;
+  document.getElementById('sizeInput').value = selectedSize;
+
+  if (hasColorVariants) {
+    filterColorsBySize(selectedSize);
+    const availableColors = sizeColorMap[selectedSize] || [];
+    if (!selectedColor && availableColors.length === 1 && availableColors[0]) {
+      const colorBtn = document.querySelector(`.color-btn[data-color="${availableColors[0]}"]`);
+      if (colorBtn) {
+        selectColor(colorBtn);
+      }
+    } else if (selectedColor && !availableColors.includes(selectedColor)) {
+      selectedColor = '';
+      document.getElementById('colorInput').value = '';
+      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+    }
+  }
+
+  const variantId = findVariantId(selectedSize, selectedColor);
+  const vdata = variantId ? variantGallery[variantId] : null;
+  if (vdata) {
+    selectedVariantId = variantId;
+    if (vdata.images.length) {
+      imageUrls.length = 0;
+      vdata.images.forEach(u => imageUrls.push(u));
+      currentSlide = 0;
+      document.getElementById('mainImg').src = imageUrls[0];
+    }
+    const priceEl = document.querySelector('.price-now');
+    if (priceEl) priceEl.textContent = '₹' + parseFloat(vdata.price).toFixed(2);
+  }
+
+  const stock  = parseInt(btn.dataset.stock) || 1;
+  const maxQty = Math.min(stock, {{ max_qty }});
+  const qtyEl  = document.getElementById('qtyInput');
+  if (qtyEl) { qtyEl.max = maxQty; if (parseInt(qtyEl.value) > maxQty) qtyEl.value = maxQty; }
+  document.getElementById('sizeError').style.display = 'none';
+}
+
+function updateSelectedCombination() {
+  const colorLabel = document.getElementById('selectedColorLabel');
+  if (colorLabel) colorLabel.textContent = selectedColor || 'Select a color';
+}
+
+function findVariantId(size, color) {
+  return Object.keys(variantGallery).find(key => {
+    const v = variantGallery[key];
+    if (v.size !== size) return false;
+    if (!hasColorVariants) return true;
+    if (!color) return false;
+    return v.color === color;
+  }) || null;
+}
+
+function validateSelection() {
+  if (!hasVariants) {
+    return true;
+  }
+
+  if (!selectedSize) {
+    document.getElementById('sizeError').style.display = 'block';
+    return false;
+  }
+
+  if (hasColorVariants && !selectedColor) {
+    document.getElementById('sizeError').style.display = 'block';
+    return false;
+  }
+
+  return true;
+}
+
+function adjustQty(dir) {
+  const inp = document.getElementById('qtyInput');
+  if (!inp) return;
+  let v = parseInt(inp.value) + dir;
+  v = Math.max(1, Math.min(v, parseInt(inp.max)||{{ max_qty }}));
+  inp.value = v;
+}
+
+function validateSizeBuyNow() {
+  return validateSelection();
+}
+
+function toggleAccordion(head) {
+  head.classList.toggle('open');
+  head.nextElementSibling.classList.toggle('open');
+}
+
+function toggleReviewForm() {
+  const w = document.getElementById('reviewFormWrap');
+  w.style.display = w.style.display === 'none' ? 'block' : 'none';
+  if (w.style.display==='block') w.scrollIntoView({behavior:'smooth',block:'start'});
+}
+let chosenRating = 0;
+function setRating(val) { chosenRating=val; document.getElementById('ratingInput').value=val; renderStars(val); }
+function hoverRating(val) { renderStars(val); }
+function resetHover()     { renderStars(chosenRating); }
+function renderStars(val) {
+  document.querySelectorAll('.sp-star').forEach(s => s.classList.toggle('lit', parseInt(s.dataset.val)<=val));
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft')  changeSlide(-1);
+  if (e.key==='ArrowRight') changeSlide(1);
+  if (e.key==='Escape'&&zoomed) {
+    zoomed=false;
+    const main=document.getElementById('galleryMain');
+    if (main) main.classList.remove('zoomed');
+    const img=document.getElementById('mainImg');
+    if (img) { img.style.transform=''; img.style.transformOrigin=''; }
+  }
+});
+
+function toggleWishlist(button, slug) {
+  const csrfToken = getCsrfToken();
+  if (!csrfToken) { window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname); return; }
+
+  fetch(`/wishlist/toggle/${slug}/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken,
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({
+      size:  selectedSize  || null,   
+      color: selectedColor || null    
+    })
+  })
+    .then(response => response.json().then(data => ({ response, data })))
+    .then(({ response, data }) => {
+        if (!response.ok || !data.success) {
+          showToast(data.error || 'Unable to update wishlist', 'error');
+          return;
+        }
+        // sync all buttons for this product (cards, detail page, etc.)
+        document.querySelectorAll(`[data-slug="${slug}"]`).forEach(b => {
+          try {
+            const svg = b.querySelector('svg');
+            if (data.is_wishlisted) {
+              b.classList.add('wishlisted');
+              if (svg) svg.setAttribute('fill', 'var(--terra)');
+            } else {
+              b.classList.remove('wishlisted');
+              if (svg) svg.setAttribute('fill', 'none');
+            }
+          } catch (e) {}
+        });
+
+        if (data.is_wishlisted) showToast(data.message || 'Added to wishlist!', 'success');
+        else showToast(data.message || 'Removed from wishlist', 'info');
+        if (typeof window.triggerWishlistUpdate === 'function') window.triggerWishlistUpdate();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Please login to add to wishlist', 'error');
+    });
+}
+function selectColorCard(button, productUuid, color) {
+    // Update active state
+    const parent = button.closest('.color-options');
+    parent.querySelectorAll('.color-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    button.classList.add('active');
+
+    // Get all elements for this product
+    const productCard  = button.closest('.product-card');
+    const sizeBadges   = productCard.querySelectorAll('.size-badge');
+    const priceElement = productCard.querySelector('.card-price .now');
+    const stockElement = productCard.querySelector('.stock-label');
+    const addToCartBtn = productCard.querySelector('.card-add');
+
+    let firstVariant = null;
+    let hasStock = false;
+    let variantsForColor = [];
+
+    // Show/hide sizes based on selected color
+    sizeBadges.forEach(el => {
+        const variantColor = el.dataset.color || '';
+        if (variantColor === color) {
+            el.style.display = 'inline-block';
+            variantsForColor.push(el);
+            if (!firstVariant) {
+                firstVariant = el;
+            }
+            if (parseInt(el.dataset.stock) > 0) {
+                hasStock = true;
+            }
+        } else {
+            el.style.display = 'none';
+        }
+    });
+
+    // Update price and stock based on first available size
+    if (firstVariant) {
+        const price = parseFloat(firstVariant.dataset.price);
+        if (priceElement) {
+            priceElement.textContent = '₹' + price.toFixed(2);
+        }
+
+        const stock = parseInt(firstVariant.dataset.stock);
+        if (stock > 5) {
+            stockElement.innerHTML = '<span class="stock-dot dot-in"></span> In Stock';
+        } else if (stock > 0) {
+            stockElement.innerHTML = '<span class="stock-dot dot-low"></span> Low Stock';
+        } else {
+            stockElement.innerHTML = '<span class="stock-dot dot-out"></span> Out of Stock';
+        }
+
+        // Auto-select the first available size
+        if (hasStock) {
+            const firstAvailable = Array.from(sizeBadges).find(el =>
+                el.dataset.color === color && parseInt(el.dataset.stock) > 0
+            );
+            if (firstAvailable) {
+                selectSize(firstAvailable, productUuid, firstAvailable.dataset.size, firstAvailable.dataset.price);
+            }
+        } else {
+            // No stock for this color - disable add to cart
+            if (addToCartBtn) {
+                addToCartBtn.disabled = true;
+                addToCartBtn.textContent = 'Out of Stock';
+            }
+        }
+    }
+}
+
+</script>
+{% endblock %}
