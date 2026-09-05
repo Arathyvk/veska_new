@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Veska Admin — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#1a0f0a;--card:#2a1a13;--card-border:#3d2418;
+      --input-bg:#3a2218;--input-border:#5a3828;
+      --copper:#c8956c;--copper-dark:#a8754c;--copper-light:#ddb08a;
+      --text:#f0e4d8;--muted:#9b7060;--dim:#6a4030;
+      --danger:#e07070;--success:#8cb895;
+    }
+    body{
+      margin:0;font-family:'DM Sans',sans-serif;
+      background:var(--bg);
+      background-image:
+        radial-gradient(ellipse at 50% 0%,rgba(180,100,60,.12) 0%,transparent 60%),
+        radial-gradient(ellipse at 80% 80%,rgba(140,70,40,.08) 0%,transparent 50%);
+      min-height:100vh;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px
+    }
+
+    .logo-wrap{text-align:center}
+    .logo-img{width:80px;height:80px;border-radius:50%;object-fit:cover;
+      border:2px solid rgba(200,149,108,.3);
+      box-shadow:0 0 30px rgba(200,149,108,.15)}
+
+    .card{
+      width:100%;max-width:429px;
+      background:var(--card);
+      border:1px solid var(--card-border);
+      border-radius:16px;
+      padding: 57px 33px 88px;
+      box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(200,149,108,.05);
+      animation:fadeUp .4s ease
+    }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+    .card-title{
+      font-family:'Cormorant Garamond',serif;
+      font-size:1.5rem;font-weight:500;
+      color:var(--copper-light);
+      text-align:center;
+      letter-spacing:3px;
+      margin-bottom:28px
+    }
+
+    .error-box{
+      background:rgba(224,112,112,.1);border:1px solid rgba(224,112,112,.3);
+      border-radius:8px;color:var(--danger);font-size:13px;
+      padding:10px 14px;margin-bottom:18px;text-align:center
+    }
+    .success-box{
+      background:rgba(140,184,149,.1);border:1px solid rgba(140,184,149,.3);
+      border-radius:8px;color:var(--success);font-size:13px;
+      padding:10px 14px;margin-bottom:18px;text-align:center
+    }
+
+    .field{
+      margin-bottom:14px;
+      position:relative;
+    }
+    .field input[type="text"],
+    .field input[type="password"]{
+      width:100%;padding:13px 48px 13px 18px;
+      background:var(--input-bg);
+      border:1px solid var(--input-border);
+      border-radius:8px;
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;font-size:17px;
+      outline:none;
+      transition:border-color .2s,box-shadow .2s
+    }
+    input::placeholder{color:var(--muted)}
+    input:focus{
+      border-color:var(--copper);
+      box-shadow:0 0 0 3px rgba(200,149,108,.12)
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 6px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      line-height: 1;
+      transition: color 0.2s;
+      border-radius: 4px;
+    }
+    .toggle-password:hover {
+      color: var(--copper-light);
+    }
+    .toggle-password:focus-visible {
+      outline: 1px solid var(--copper);
+      outline-offset: 2px;
+    }
+    .toggle-password svg {
+      display: block;
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .btn-login{
+      width:100%;margin-top:8px;padding:13px;
+      background:linear-gradient(135deg,var(--copper-light),var(--copper-dark));
+      color:#1a0f0a;
+      border:none;border-radius:8px;
+      font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+      letter-spacing:1.5px;text-transform:uppercase;
+      cursor:pointer;
+      transition:opacity .2s,transform .2s,box-shadow .2s;
+      box-shadow:0 4px 20px rgba(200,149,108,.3)
+    }
+    .btn-login:hover{
+      opacity:.9;transform:translateY(-1px);
+      box-shadow:0 6px 28px rgba(200,149,108,.45)
+    }
+    .btn-login:active{transform:translateY(0)}
+    .btn-login:disabled{
+      opacity:.6;cursor:not-allowed;transform:none
+    }
+
+    .footer{font-size:15px;color:var(--dim);text-align:center}
+  </style>
+</head>
+<body>
+
+  <div class="logo-wrap">
+    <img class="logo-img"
+      src="https://res.cloudinary.com/djet6cpft/image/upload/v1771477431/veskalogo_odwxyf.jpg"
+      alt="VESKA">
+  </div>
+
+  <div class="card">
+    <h1 class="card-title">Admin Login</h1>
+
+    <!-- Django error messages -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="{% if message.tags == 'error' %}error-box{% elif message.tags == 'success' %}success-box{% else %}error-box{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Form errors -->
+    {% if form.errors %}
+      <div class="error-box">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            {{ error }}<br>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Non-field errors -->
+    {% if form.non_field_errors %}
+      <div class="error-box">
+        {% for error in form.non_field_errors %}
+          {{ error }}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'admin_login' %}">
+      {% csrf_token %}
+
+      <div class="field">
+        <input type="text" name="email" id="emailInput"
+            placeholder="Enter your admin email"
+            value="{{ form.email.value|default:'' }}"
+            required autofocus>
+      </div>
+
+      <div class="field" id="password-field">
+        <input type="password" name="password" id="passwordInput"
+          placeholder="Password"
+          required>
+        <button type="button" class="toggle-password" id="togglePasswordBtn" aria-label="Show password">
+          <svg viewBox="0 0 24 24" id="eyeIcon">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+
+      <button type="submit" class="btn-login" id="loginBtn">Login</button>
+    </form>
+  </div>
+
+  <p class="footer">© 2026 Veska. All Rights Reserved.</p>
+
+  <script>
+    (function() {
+      const toggleBtn = document.getElementById('togglePasswordBtn');
+      const passwordInput = document.getElementById('passwordInput');
+      const eyeIcon = document.getElementById('eyeIcon');
+      const loginBtn = document.getElementById('loginBtn');
+
+      if (toggleBtn && passwordInput && eyeIcon) {
+        let isPasswordVisible = false;
+
+        function togglePasswordVisibility() {
+          isPasswordVisible = !isPasswordVisible;
+          passwordInput.type = isPasswordVisible ? 'text' : 'password';
+          
+          if (isPasswordVisible) {
+            eyeIcon.innerHTML = `
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+              <line x1="2" y1="2" x2="22" y2="22"/>
+            `;
+            toggleBtn.setAttribute('aria-label', 'Hide password');
+          } else {
+            eyeIcon.innerHTML = `
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            `;
+            toggleBtn.setAttribute('aria-label', 'Show password');
+          }
+        }
+
+        toggleBtn.addEventListener('click', togglePasswordVisibility);
+      }
+
+      // Prevent multiple submissions
+      if (loginBtn) {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function() {
+          loginBtn.disabled = true;
+          loginBtn.textContent = 'Logging in...';
+        });
+      }
+
+      // If there are error messages, re-enable the button
+      window.addEventListener('load', function() {
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Login';
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>
