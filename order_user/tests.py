@@ -8,7 +8,7 @@ from django.urls import reverse
 from category_admin.models import Category
 from order_user.models import Order, OrderItem
 from product_admin.models import Product
-# from wallet_user.models import Wallet, WalletTransaction
+from wallet_user.models import Wallet, WalletTransaction
 
 
 class CancelOrderItemViewTests(TestCase):

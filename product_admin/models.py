@@ -3,13 +3,12 @@ import os
 import logging
 
 from django.db import models
-# from offer_admin.models import BaseOffer
-from django.db.models import Q
+ from django.db.models import Q
 from django.utils import timezone
 from django.db.models import Sum, Min
 from django.utils.text import slugify
 from PIL import Image as PILImage
-# from category_admin.models import Category
+from category_admin.models import Category
 from django.conf import settings
 
 CATEGORY_CHOICES = [

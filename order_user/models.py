@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 
-# from order_admin.models import RETURN_DAYS
+from order_admin.models import RETURN_DAYS
 
 
 RETURN_REASONS = [
@@ -145,24 +145,24 @@ class Order(models.Model):
     def order_number(self):
         return str(self.uuid).split('-')[0].upper()
 
-    # @property
-    # def can_return(self):
-    #     if self.status != 'delivered':
-    #         return False
-    #     if not self.delivered_at:
-    #         return False
-    #     return_deadline = self.delivered_at + timedelta(days=RETURN_DAYS)
-    #     return timezone.now() <= return_deadline
+    @property
+    def can_return(self):
+        if self.status != 'delivered':
+            return False
+        if not self.delivered_at:
+            return False
+        return_deadline = self.delivered_at + timedelta(days=RETURN_DAYS)
+        return timezone.now() <= return_deadline
     
     @property
     def can_cancel(self):
         return self.status in ('pending', 'confirmed', 'processing')
     
-    # @property
-    # def return_deadline(self):
-    #     if self.delivered_at:
-    #         return self.delivered_at + timedelta(days=RETURN_DAYS)
-    #     return None
+    @property
+    def return_deadline(self):
+        if self.delivered_at:
+            return self.delivered_at + timedelta(days=RETURN_DAYS)
+        return None
 
     def get_payment_method_display(self):
         payment_display = {

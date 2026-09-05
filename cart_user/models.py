@@ -86,25 +86,25 @@ class CartItem(models.Model):
     def line_total(self):
         return self.unit_price * min(self.quantity, self.available_stock)
 
-    # @property
-    # def active_offer(self):
-    #     from offer_admin.views import get_applicable_offers
+    @property
+    def active_offer(self):
+        from offer_admin.views import get_applicable_offers
 
-    #     user = None
-    #     if self.cart and self.cart.user and self.cart.user.is_authenticated:
-    #         user = self.cart.user
+        user = None
+        if self.cart and self.cart.user and self.cart.user.is_authenticated:
+            user = self.cart.user
 
-    #     best_offer = None
-    #     best_discount = Decimal('0')
-    #     line_total = self.unit_price * self.quantity
+        best_offer = None
+        best_discount = Decimal('0')
+        line_total = self.unit_price * self.quantity
 
-    #     for offer in get_applicable_offers(self.product, user):
-    #         discount = offer.calculate_discount(line_total)
-    #         if discount > best_discount:
-    #             best_offer = offer
-    #             best_discount = discount
+        for offer in get_applicable_offers(self.product, user):
+            discount = offer.calculate_discount(line_total)
+            if discount > best_discount:
+                best_offer = offer
+                best_discount = discount
 
-    #     return best_offer
+        return best_offer
 
     @property
     def discounted_unit_price(self):
