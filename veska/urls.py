@@ -14,6 +14,7 @@ urlpatterns = [
     path('wishlist_user/',include('wishlist_user.urls')),
     path('order_user/',include('order_user.urls')),
     path('checkout_page/',include('checkout_page.urls')),
+    path('order_admin/',include('order_admin.urls')),
 
 
 ]

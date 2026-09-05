@@ -3,7 +3,7 @@ import os
 import logging
 
 from django.db import models
- from django.db.models import Q
+from django.db.models import Q
 from django.utils import timezone
 from django.db.models import Sum, Min
 from django.utils.text import slugify
