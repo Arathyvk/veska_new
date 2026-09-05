@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'admin_side',
     'customers',
     'product_user',
+    'cart_user',
 ]
 
 SITE_ID = 1
@@ -105,6 +106,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'cart_user.context_processors.cart_nav_counts',
+
             ],
         },
     },

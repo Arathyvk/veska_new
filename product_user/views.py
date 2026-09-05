@@ -235,7 +235,7 @@ def product_shop(request):
     })
 
 
-def product_detail(request, slug):
+# def product_detail(request, slug):
     # try:
     #      product = Product.objects.prefetch_related(
     #         'variants', 'variants__images', 'reviews'
