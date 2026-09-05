@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import path,include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -19,6 +21,7 @@ urlpatterns = [
     path('wallet_user/',include('wallet_user.urls')),
     path('offer_admin/',include('offer_admin.urls')),
     path('coupon_admin/',include('coupon_admin.urls')),
+    path('about/',include('about_us.urls')),
 
 
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
