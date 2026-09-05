@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'offer_admin',
     'coupon_admin',
     'about_us',
+    'dashboard',
 
 ]
 

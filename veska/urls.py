@@ -23,6 +23,7 @@ urlpatterns = [
     path('coupon_admin/',include('coupon_admin.urls')),
     path('about/',include('about_us.urls')),
     path('wallet_admin/',include('wallet_admin.urls')),
+    path('dashboard/',include('dashboard.urls')),
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
