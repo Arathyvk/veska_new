@@ -10,12 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 import cloudinary
 from decouple import config
+from django.contrib.messages import constants as messages
+from dotenv import load_dotenv
 
-
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -69,6 +72,7 @@ INSTALLED_APPS = [
     'order_admin',
     'wallet_user',
     'offer_admin',
+    'coupon_admin',
 ]
 
 SITE_ID = 1
@@ -175,6 +179,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -184,3 +191,73 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_EMAIL_VERIFICATION = 'none' 
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'error',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.INFO: 'info',
+}
+
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+AUTH_USER_MODEL = 'users.User'
+
+
+ACCOUNT_ADAPTER = 'core.adapters.AccountAdapter'
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1800        
+SESSION_SAVE_EVERY_REQUEST = True  
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+
+ACCOUNT_INACTIVE_URL = '/accounts/inactive/' 
+
+
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET')
+
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+
+
+TIME_ZONE = 'Asia/Kolkata' 
+USE_TZ = True
+
+

@@ -18,6 +18,7 @@ urlpatterns = [
     path('wallet_user/',include('wallet_user.urls')),
     path('wallet_user/',include('wallet_user.urls')),
     path('offer_admin/',include('offer_admin.urls')),
+    path('coupon_admin/',include('coupon_admin.urls')),
 
 
 ]
