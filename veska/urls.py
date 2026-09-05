@@ -22,6 +22,7 @@ urlpatterns = [
     path('offer_admin/',include('offer_admin.urls')),
     path('coupon_admin/',include('coupon_admin.urls')),
     path('about/',include('about_us.urls')),
+    path('wallet_admin/',include('wallet_admin.urls')),
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
