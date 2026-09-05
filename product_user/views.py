@@ -12,7 +12,7 @@ from decimal import Decimal, InvalidOperation
 from product_admin.models import Product, ProductReview, ProductVariant,ProductImage
 from cart_user.models import CartItem
 from cart_user.cart_helpers import get_cart, cart_count_payload, wants_json
-# from wishlist_user.models import Wishlist, WishlistProduct
+from wishlist_user.models import Wishlist
 from category_admin.models import Category
 
 ITEMS_PER_PAGE   = 12
@@ -71,28 +71,28 @@ def _sanitize_search(raw):
     return ' '.join(cleaned.split())
 
 
-# def _get_wishlist(request):
-#     if request.user.is_authenticated:
-#         wl, _ = Wishlist.objects.get_or_create(user=request.user)
-#         return wl
-#     return None
+def _get_wishlist(request):
+    if request.user.is_authenticated:
+        wl, _ = Wishlist.objects.get_or_create(user=request.user)
+        return wl
+    return None
 
 
-# def _wishlist_ids(request):
-#     if not request.user.is_authenticated:
-#         return []
+def _wishlist_ids(request):
+    if not request.user.is_authenticated:
+        return []
     
-#     try:
-#         wl = _get_wishlist(request)
-#         if not wl:
-#             return []
+    try:
+        wl = _get_wishlist(request)
+        if not wl:
+            return []
         
-#         wishlist_items = wl.items.all()  
-#         wishlist_ids = [str(item.product.uuid) for item in wishlist_items]
+        wishlist_items = wl.items.all()  
+        wishlist_ids = [str(item.product.uuid) for item in wishlist_items]
         
-#         return wishlist_ids
-#     except Exception as e:
-#         return []
+        return wishlist_ids
+    except Exception as e:
+        return []
 
 
 def product_shop(request):
@@ -231,7 +231,7 @@ def product_shop(request):
         'stock_choices': STOCK_CHOICES,
         'global_price_min': global_price_min,
         'global_price_max': global_price_max,
-        # 'wishlist_ids': _wishlist_ids(request),  
+        'wishlist_ids': _wishlist_ids(request),  
     })
 
 
@@ -353,11 +353,11 @@ def product_detail(request, slug):
         .exclude(pk=product.pk)
         .prefetch_related('variants', 'variants__images')[:6]
     )
-    # wl          = _get_wishlist(request)
-    # in_wishlist = (
-    #     wl.items.filter(product_id=product.id).exists()
-    #     if wl else False
-    # )    
+    wl          = _get_wishlist(request)
+    in_wishlist = (
+        wl.items.filter(product_id=product.id).exists()
+        if wl else False
+    )    
     category_display = product.category.name
 
     return render(request, 'product_detail.html', {
@@ -381,7 +381,7 @@ def product_detail(request, slug):
         'discount_percent': discount_percent,
         'savings':          savings,
         'highlights':       highlights,
-        # 'in_wishlist':      in_wishlist,
+        'in_wishlist':      in_wishlist,
         'category_display': category_display,
         'product_price':   product_price,
         'best_offer':      best_offer,

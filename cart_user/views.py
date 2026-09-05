@@ -6,27 +6,27 @@ from django.views.decorators.http import require_POST
 from cart_user.models import CartItem, MAX_QTY_PER_ITEM
 from cart_user.cart_helpers import get_cart, cart_count_payload, wants_json
 from product_admin.models import Product, ProductVariant
-# from wishlist_user.models import Wishlist, WishlistProduct
+from wishlist_user.models import Wishlist, WishlistProduct
 # from checkout_page.views import FREE_SHIPPING_THRESHOLD as FREE_SHIPPING, SHIPPING_CHARGE as SHIPPING_FEE
 
 def _get_cart(request):
     return get_cart(request)
 
 
-# def _get_wishlist(request):
-#     if request.user.is_authenticated:
-#         wl, _ = Wishlist.objects.get_or_create(user=request.user)
-#         return wl
-#     return None
+def _get_wishlist(request):
+    if request.user.is_authenticated:
+        wl, _ = Wishlist.objects.get_or_create(user=request.user)
+        return wl
+    return None
 
 
-# def _wishlist_ids(request):
-#     wl = _get_wishlist(request)
-#     if not wl:
-#         return set()
-#     return set(
-#         WishlistProduct.objects.filter(wishlist=wl).values_list('product_id', flat=True)
-#     )
+def _wishlist_ids(request):
+    wl = _get_wishlist(request)
+    if not wl:
+        return set()
+    return set(
+        WishlistProduct.objects.filter(wishlist=wl).values_list('product_id', flat=True)
+    )
 
 
 def _safe_next(request, slug):
@@ -110,49 +110,49 @@ def cart_add(request, slug):
         qty = 1
 
     cart = _get_cart(request)
-    # item, created = CartItem.objects.get_or_create(
-    #     cart=cart, product=product, variant=variant,
-    #     defaults={'quantity': 0},
-    # )
+    item, created = CartItem.objects.get_or_create(
+        cart=cart, product=product, variant=variant,
+        defaults={'quantity': 0},
+    )
 
-    # available = variant.stock if variant else product.total_stock
-    # new_qty   = item.quantity + qty
-    # capped    = min(new_qty, available, MAX_QTY_PER_ITEM)
-    # item.quantity = capped
-    # item.save()
+    available = variant.stock if variant else product.total_stock
+    new_qty   = item.quantity + qty
+    capped    = min(new_qty, available, MAX_QTY_PER_ITEM)
+    item.quantity = capped
+    item.save()
 
-    # wl = _get_wishlist(request)
-    # if wl:
-    #     qs = WishlistProduct.objects.filter(wishlist=wl, product=product)
-    #     if size:
-    #         qs = qs.filter(selected_size=size)
-    #     qs.delete()
+    wl = _get_wishlist(request)
+    if wl:
+        qs = WishlistProduct.objects.filter(wishlist=wl, product=product)
+        if size:
+            qs = qs.filter(selected_size=size)
+        qs.delete()
 
-    # if capped < new_qty:
-    #     warn_msg = (
-    #         f'Only {capped} unit(s) of "{product.name}" are available; '
-    #         f'cart set to {capped}.'
-    #     )
-    #     if wants_json(request):
-    #         payload = cart_count_payload(request, cart)
-    #         payload['message'] = warn_msg
-    #         payload['warning'] = True
-    #         return JsonResponse(payload)
-    #     messages.warning(request, warn_msg)
-    # else:
-    #     msg = (
-    #         f'"{product.name}" added to your cart!'
-    #         if created
-    #         else f'Cart updated — {capped} × {product.name}.'
-    #     )
-    #     if wants_json(request):
-    #         payload = cart_count_payload(request, cart)
-    #         payload['message'] = msg
-    #         return JsonResponse(payload)
-    #     messages.success(request, msg)
+    if capped < new_qty:
+        warn_msg = (
+            f'Only {capped} unit(s) of "{product.name}" are available; '
+            f'cart set to {capped}.'
+        )
+        if wants_json(request):
+            payload = cart_count_payload(request, cart)
+            payload['message'] = warn_msg
+            payload['warning'] = True
+            return JsonResponse(payload)
+        messages.warning(request, warn_msg)
+    else:
+        msg = (
+            f'"{product.name}" added to your cart!'
+            if created
+            else f'Cart updated — {capped} × {product.name}.'
+        )
+        if wants_json(request):
+            payload = cart_count_payload(request, cart)
+            payload['message'] = msg
+            return JsonResponse(payload)
+        messages.success(request, msg)
 
-    # if action == 'buy_now':
-        # return redirect('checkout')
+    if action == 'buy_now':
+        return redirect('checkout')
     return redirect('cart_detail')
 
 
@@ -169,7 +169,7 @@ def cart_detail(request):
     offer_discount = sum(
         (item.line_total - item.discounted_line_total) for item in ok_items if item.discounted_line_total is not None
     )
-    # discounted_subtotal = subtotal - offer_discount
+    discounted_subtotal = subtotal - offer_discount
     # shipping = 0 if discounted_subtotal >= FREE_SHIPPING else SHIPPING_FEE
     # order_total = discounted_subtotal + shipping
     # remaining_free = max(0, FREE_SHIPPING - discounted_subtotal)

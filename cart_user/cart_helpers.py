@@ -1,5 +1,5 @@
 from cart_user.models import Cart, CartItem
-# from wishlist_user.models import Wishlist
+from wishlist_user.models import Wishlist
 
 
 def ensure_session(request):
@@ -32,13 +32,13 @@ def cart_total_items(cart):
     return sum(item.quantity for item in cart.items.all())
 
 
-# def wishlist_count_for(request):
-#     if not request.user.is_authenticated:
-#         return 0
-#     wl = Wishlist.objects.filter(user=request.user).first()
-#     if not wl:
-#         return 0
-#     return wl.items.count()  
+def wishlist_count_for(request):
+    if not request.user.is_authenticated:
+        return 0
+    wl = Wishlist.objects.filter(user=request.user).first()
+    if not wl:
+        return 0
+    return wl.items.count()  
 
 
 def cart_count_payload(request, cart=None):
@@ -46,7 +46,7 @@ def cart_count_payload(request, cart=None):
     return {
         'success': True,
         'total_items': cart_total_items(cart),
-        # 'wishlist_count': wishlist_count_for(request),
+        'wishlist_count': wishlist_count_for(request),
     }
 
 

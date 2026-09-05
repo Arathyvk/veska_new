@@ -11,6 +11,7 @@ urlpatterns = [
     path('cart_user/',include('cart_user.urls')),
     path('product_admin/',include('product_admin.urls')),
     path('category_admin/',include('category_admin.urls')),
+    path('wishlist_user/',include('wishlist_user.urls')),
 
 
 ]
