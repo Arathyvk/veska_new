@@ -3,6 +3,7 @@ from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
 
+
 urlpatterns = [
     path('django-admin/', admin.site.urls),
     path('accounts/',include('allauth.urls')),
@@ -27,3 +28,8 @@ urlpatterns = [
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler404 = 'core.views.custom_404'
+handler500 = 'core.views.custom_500'
+handler403 = 'core.views.custom_403'
+handler400 = 'core.views.custom_400'
