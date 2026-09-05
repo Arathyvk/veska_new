@@ -16,6 +16,8 @@ urlpatterns = [
     path('checkout_page/',include('checkout_page.urls')),
     path('order_admin/',include('order_admin.urls')),
     path('wallet_user/',include('wallet_user.urls')),
+    path('wallet_user/',include('wallet_user.urls')),
+    path('offer_admin/',include('offer_admin.urls')),
 
 
 ]
