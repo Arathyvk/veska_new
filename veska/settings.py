@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'order_user',
     'checkout_page',
     'order_admin',
+    'waallet_user',
 ]
 
 SITE_ID = 1
