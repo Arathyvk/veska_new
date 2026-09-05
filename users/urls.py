@@ -13,7 +13,7 @@ urlpatterns = [
     path("forgot-password/verify/",views.verify_forgot_otp,name="verify_forgot_otp"),
     path('forgot-password/resend/', views.forgot_resend_otp,   name='forgot_resend_otp'),
     path("reset-password/",views.reset_password,name="reset_password"),
-    path('newadmin/', include('admin_side.urls')),
+    # path('newadmin/', include('admin_side.urls')),
     path('debug/', views.debug_social, name='debug_social'),
 
 ]

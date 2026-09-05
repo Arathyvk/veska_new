@@ -1,5 +1,6 @@
 import re
 import logging
+import uuid as _uuid
 
 from django.contrib import messages
 from django.shortcuts import render,redirect
@@ -9,12 +10,10 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
-import uuid as _uuid
 from django.urls import reverse
 from users.utils import apply_referral_for_new_user
 from users.models import User, ReferralCode
-from product_admin.models import Product
-from cart_user.models import Cart
+
  
 from core.otp import (
     gen_otp, send_otp_email, is_otp_expired, save_otp_to_session, 
@@ -35,12 +34,12 @@ def home_view(request):
         if request.user.is_authenticated else ""
     )
 
-    featured_products = (
-        Product.objects
-        .filter(is_active=True, is_featured=True)
-        .prefetch_related('variants__images')
-        .order_by('-created_at')[:8]
-    )
+    # featured_products = (
+    #     Product.objects
+    #     .filter(is_active=True, is_featured=True)
+    #     .prefetch_related('variants__images')
+    #     .order_by('-created_at')[:8]
+    # )
 
     referral_code_obj = None
     referral_link     = None
@@ -61,12 +60,12 @@ def home_view(request):
         signup_path = reverse('signup')
         referral_link = request.build_absolute_uri(f'{signup_path}?ref={referral_code_obj.code}')
 
-    return render(request, "landing.html", {
-        "name":     name,
-        "products": featured_products,
-        "referral_code_obj": referral_code_obj,
-        "referral_link": referral_link,
-    })
+    # return render(request, "landing.html", {
+    #     "name":     name,
+    #     "products": featured_products,
+    #     "referral_code_obj": referral_code_obj,
+    #     "referral_link": referral_link,
+    # })
 
 
 @never_cache
@@ -122,20 +121,20 @@ def login_view(request):
         
         login(request, user)
 
-        session_cart = Cart.objects.filter(session_key=old_session_key).first()
-        user_cart, _ = Cart.objects.get_or_create(user=user)
+        # session_cart = Cart.objects.filter(session_key=old_session_key).first()
+        # user_cart, _ = Cart.objects.get_or_create(user=user)
         
-        if session_cart:
-            for item in session_cart.items.all():
-                user_item, created = user_cart.items.get_or_create(
-                    product=item.product,
-                    variant=item.variant,
-                    defaults={'quantity': item.quantity}
-                )
-                if not created:
-                    user_item.quantity += item.quantity
-                    user_item.save()
-            session_cart.delete()
+        # if session_cart:
+        #     for item in session_cart.items.all():
+        #         user_item, created = user_cart.items.get_or_create(
+        #             product=item.product,
+        #             variant=item.variant,
+        #             defaults={'quantity': item.quantity}
+        #         )
+        #         if not created:
+        #             user_item.quantity += item.quantity
+        #             user_item.save()
+        #     session_cart.delete()
 
         messages.success(request, f"Welcome back, {user.first_name or user.email}!")
         

@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+import cloudinary
+from decouple import config
+
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,12 +25,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_xdgw0jk@wn0*cm*pp-cl6judha)+t_!r9it6!g!m6a(d=)kg-'
-
+SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+]
 
 
 # Application definition
@@ -37,16 +44,32 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+
 
     'allauth',
     'allauth.account',
     'allauth.socialaccount',    
     'allauth.socialaccount.providers.google',
 
+    'cloudinary',
+    'cloudinary_storage',
+
+
     'users',
 ]
 
 SITE_ID = 1
+
+cloudinary.config(
+    cloud_name=config('CLOUDINARY_CLOUD_NAME'),
+    api_key=config('CLOUDINARY_API_KEY'),
+    api_secret=config('CLOUDINARY_API_SECRET'),
+    )
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -61,7 +84,9 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = [
+    'users.backends.EmailBackend',
     "django.contrib.auth.backends.ModelBackend",
+
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
@@ -90,8 +115,12 @@ WSGI_APPLICATION = 'veska.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE'  : config('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME'    : config('DB_NAME'),
+        'USER'    : config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST'    : config('DB_HOST', default='localhost'),
+        'PORT'    : config('DB_PORT', default='5432'),
     }
 }
 
