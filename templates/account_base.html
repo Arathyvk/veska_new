@@ -264,9 +264,9 @@
   <main class="account-main">
 
     {% if messages %}
-    <div class="msg-list">
-      {% for msg in messages %}
-        <div class="msg {% if msg.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ msg }}</div>
+    <div class="messages-container">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
       {% endfor %}
     </div>
     {% endif %}

@@ -1,11 +1,10 @@
 from django.db import models
 from django.conf import settings
-
+from cloudinary.models import CloudinaryField
 
 class Address(models.Model):
     ADDRESS_TYPE = [
         ('home',  'Home'),
-        ('work',  'Work'),
         ('other', 'Other'),
     ]
  
@@ -39,4 +38,4 @@ class Address(models.Model):
 
 class Profile(models.Model):
     user          = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='profile')
-    profile_image = models.ImageField(upload_to="profile_images/",blank=True,null=True)
+    profile_image = CloudinaryField("images",blank=True,null=True)

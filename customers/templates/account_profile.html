@@ -370,26 +370,32 @@
 
   <!-- ===== AVATAR SECTION ===== -->
   <div class="avatar-section">
-    <div class="avatar-wrap">
-        {% if user.profile_pic %}
-            <img
-                id="avatarPreview"
-                class="avatar-img"
-                src="{{ user.profile_pic.url }}"
-                alt="Profile Photo">
-        {% else %}
-            <div id="avatarPlaceholder" class="avatar-placeholder">
-                {{ user.first_name|default:user.email|first|upper }}
-            </div>
+      <div class="avatar-wrap">
 
-            <img
-                id="avatarPreview"
-                class="avatar-img"
-                src=""
-                alt="Profile Photo"
-                style="display:none;">
-        {% endif %}
-    </div>
+          {% if user.profile.profile_image %}
+
+              <img
+                  id="avatarPreview"
+                  class="avatar-img"
+                  src="{{ user.profile.profile_image.url }}"
+                  alt="Profile Photo">
+
+          {% else %}
+
+              <div id="avatarPlaceholder" class="avatar-placeholder">
+                  {{ user.first_name|default:user.email|first|upper }}
+              </div>
+
+              <img
+                  id="avatarPreview"
+                  class="avatar-img"
+                  src=""
+                  alt="Profile Photo"
+                  style="display:none;">
+
+          {% endif %}
+
+      </div>
 
     <div class="avatar-actions">
       <button class="avatar-edit-btn" id="avatarEditBtn" type="button" title="Change photo">
@@ -556,31 +562,34 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // ===== APPLY CROP =====
-  cropApply.addEventListener("click", function() {
+cropApply.addEventListener("click", function() {
     if (!cropper) return;
 
     const canvas = cropper.getCroppedCanvas({
-      width: 400,
-      height: 400
+        width: 400,
+        height: 400
     });
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
-    // Update preview
     avatarPreview.src = dataUrl;
+    avatarPreview.style.display = "block";
 
-    // Set hidden input
+    const placeholder = document.getElementById("avatarPlaceholder");
+
+    if (placeholder) {
+        placeholder.style.display = "none";
+    }
+
     croppedInput.value = dataUrl;
-
-    // Clear remove flag
     removePhotoInput.value = "";
 
-    // Clean up
     cropper.destroy();
     cropper = null;
+
     cropModal.classList.remove("open");
     photoFileInput.value = "";
-  });
+});
 
   // ===== CANCEL CROP =====
   cropCancel.addEventListener("click", function() {
