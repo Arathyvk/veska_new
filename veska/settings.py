@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'product_admin',
     'cart_user',
     'category_admin',
+    'wishlist_user',
 ]
 
 SITE_ID = 1
