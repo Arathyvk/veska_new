@@ -29,7 +29,7 @@ class Product(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=300, unique=True, blank=True)
     description = models.TextField(blank=True)
-    # category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
     brand = models.CharField(max_length=100, blank=True)
     is_listed = models.BooleanField(default=True)
     is_blocked = models.BooleanField(default=False)
@@ -89,24 +89,25 @@ class Product(models.Model):
         return sorted(set(v.color for v in self.variants.all() if v.color))
 
 
-    # def get_best_offer(self, amount=None):
+    def get_best_offer(self, amount=None):
+        from offer_admin.models import BaseOffer
 
-    #     if amount is None:
-    #         amount = self.price
+        if amount is None:
+            amount = self.price
 
-    #     now = timezone.now()
-    #     offers = BaseOffer.objects.filter(
-    #         is_active=True, start_date__lte=now, end_date__gte=now,
-    #     ).filter(
-    #         Q(offer_type='PRODUCT', products=self) | Q(offer_type='CATEGORY', categories=self.category)
-    #     )
-    #     best_offer, best_disc = None, 0
-    #     for o in offers:
-    #         if o.is_valid:
-    #             disc = o.calculate_discount(amount)
-    #             if disc > best_disc:
-    #                 best_offer, best_disc = o, disc
-    #     return best_offer
+        now = timezone.now()
+        offers = BaseOffer.objects.filter(
+            is_active=True, start_date__lte=now, end_date__gte=now,
+        ).filter(
+            Q(offer_type='PRODUCT', products=self) | Q(offer_type='CATEGORY', categories=self.category)
+        )
+        best_offer, best_disc = None, 0
+        for o in offers:
+            if o.is_valid:
+                disc = o.calculate_discount(amount)
+                if disc > best_disc:
+                    best_offer, best_disc = o, disc
+        return best_offer
 
 
     @property

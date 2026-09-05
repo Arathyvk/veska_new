@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'wallet_user',
     'offer_admin',
     'coupon_admin',
+    'about_us',
 ]
 
 SITE_ID = 1
@@ -133,15 +134,14 @@ WSGI_APPLICATION = 'veska.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE'  : config('DB_ENGINE', default='django.db.backends.postgresql'),
-        'NAME'    : config('DB_NAME'),
-        'USER'    : config('DB_USER'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
-        'HOST'    : config('DB_HOST', default='localhost'),
-        'PORT'    : config('DB_PORT', default='5432'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
@@ -182,16 +182,6 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
-
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
-
 
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
