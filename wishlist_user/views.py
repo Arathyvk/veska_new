@@ -173,34 +173,81 @@ def remove_wishlist_item(request, slug):
 
 
 @login_required
-def move_to_cart(request, product_id):
-    product = get_object_or_404(Product, pk=product_id)
-    wl = get_object_or_404(Wishlist, user=request.user)
+@require_POST
+def move_to_cart(request, wishlist_item_id):
+    wl = get_object_or_404(
+        Wishlist,
+        user=request.user
+    )
 
-    wishlist_item = WishlistProduct.objects.filter(wishlist=wl, product=product).first()
+    wishlist_item = get_object_or_404(
+        WishlistProduct.objects.select_related('product'),
+        id=wishlist_item_id,
+        wishlist=wl
+    )
 
-    variant = None
-    if wishlist_item:
-        variant = ProductVariant.objects.filter(
-            product=product,
-            size=wishlist_item.selected_size,
-            color=wishlist_item.color
-        ).first()
+    product = wishlist_item.product
+
+    variant = ProductVariant.objects.filter(
+        product=product,
+        size=wishlist_item.selected_size,
+        color=wishlist_item.color
+    ).first()
+
+    if product.variants.exists() and not variant:
+        messages.error(
+            request,
+            "The selected size/color combination is no longer available."
+        )
+        return redirect('wishlist_detail')
+
+    if variant:
+        if variant.stock <= 0:
+            messages.error(
+                request,
+                f"{product.name} ({variant.size}) is out of stock."
+            )
+            return redirect('wishlist_detail')
+
+        stock_limit = variant.stock
+
+    else:
+        if product.total_stock <= 0:
+            messages.error(
+                request,
+                f"{product.name} is out of stock."
+            )
+            return redirect('wishlist_detail')
+
+        stock_limit = product.total_stock
 
     cart = _get_cart(request)
 
     cart_item, created = CartItem.objects.get_or_create(
-        cart=cart, product=product, variant=variant,
+        cart=cart,
+        product=product,
+        variant=variant,
         defaults={'quantity': 1}
     )
+
     if not created:
+        if cart_item.quantity >= stock_limit:
+            messages.warning(
+                request,
+                "You already have the maximum available quantity in your cart."
+            )
+            return redirect('cart_detail')
+
         cart_item.quantity += 1
-        cart_item.save()
+        cart_item.save(update_fields=['quantity'])
 
-    if wishlist_item:
-        wishlist_item.delete()
+    wishlist_item.delete()
 
-    messages.success(request, f'{product.name} moved to cart')
+    messages.success(
+        request,
+        f'"{product.name}" moved to cart.'
+    )
+
     return redirect('cart_detail')
 
 

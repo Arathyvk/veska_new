@@ -15,7 +15,7 @@ from django.http import JsonResponse
 
 from product_admin.models import Product, ProductImage
 from product_admin.forms import ProductForm, ProductVariantFormSet
-# from category_admin.models import Category
+from category_admin.models import Category
 
 
 def is_admin(user):
@@ -192,7 +192,7 @@ def product_add(request):
                     "variant_formset": variant_formset,
                     "action": "add",
                     "product": None,
-                    # "categories": Category.objects.all(),
+                    "categories": Category.objects.all(),
                 })
 
             first_variant = variants[0]
@@ -220,7 +220,7 @@ def product_add(request):
         'variant_formset': variant_formset,
         'action': 'add',
         'product': None,
-        # 'categories': Category.objects.all(),
+        'categories': Category.objects.all(),
     })
 
 
@@ -283,7 +283,7 @@ def product_edit(request, uuid):
         'variant_formset': variant_formset,
         'product': product,
         'action': 'edit',
-        # 'categories': Category.objects.all(),
+        'categories': Category.objects.all(),
     })
 
 

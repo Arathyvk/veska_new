@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 from product_admin.models import Product, ProductVariant
-# from category_admin.models import Category
+from category_admin.models import Category
 
 from django.core.exceptions import ValidationError
 import re
@@ -82,7 +82,7 @@ class ProductForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.fields['category'].queryset = Category.objects.all()
+        self.fields['category'].queryset = Category.objects.all()
         self.fields['category'].empty_label = "— Select —"
         self.fields['category'].label_from_instance = lambda obj: obj.name
 

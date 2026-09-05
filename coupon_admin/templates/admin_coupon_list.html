@@ -47,10 +47,62 @@ a{text-decoration:none;color:inherit}button,input,select{font-family:var(--body)
 .coming-tag{display:inline-block;padding:1px 7px;background:var(--orange-pale);color:var(--orange);border-radius:8px;font-size:14px;font-weight:700}
 .tgl{position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer}
 .tgl input{opacity:0;width:0;height:0;position:absolute}
-.tgl-track{position:absolute;inset:0;background:var(--border2);border-radius:10px;transition:.2s;cursor:pointer}
-.tgl-track::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.tgl input:checked + .tgl-track{background:var(--green)}
-.tgl input:checked + .tgl-track::after{transform:translateX(16px)}
+.tgl {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.tgl input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.tgl-track {
+    position: absolute;
+    inset: 0;
+    background: var(--card);
+    border: 1.5px solid var(--border2);
+    border-radius: 20px;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.tgl-track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+
+.tgl input:checked + .tgl-track {
+    background: var(--green);
+    border-color: var(--green);
+}
+
+.tgl input:checked + .tgl-track::after {
+    transform: translateX(18px);
+}
+
+.tgl input:not(:checked) + .tgl-track {
+    background: var(--card);
+    border-color: var(--border2);
+}
+
+.tgl input:not(:checked) + .tgl-track::after {
+    transform: translateX(0);
+}
 .act-row{display:flex;gap:6px;align-items:center}
 .btn-edit{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;background:var(--card2);border:1px solid var(--border2);color:var(--muted2);border-radius:var(--radius);font-size:11.5px;font-weight:600;transition:.15s;text-decoration:none}
 .btn-edit:hover{border-color:var(--terra);color:var(--terra2)}
@@ -139,10 +191,12 @@ a{text-decoration:none;color:inherit}button,input,select{font-family:var(--body)
             {% else %}<div style="font-size:15px;color:var(--muted)">No expiry</div>{% endif %}
           </td>
           <td>
-            <label class="tgl" title="Toggle active" onclick="toggleCoupon('{{ c.pk }}', this)">
-              <input type="checkbox" {% if c.is_active %}checked{% endif %} onchange="event.preventDefault()">
+          <label class="tgl" title="Toggle active" onclick="toggleCoupon('{{ c.pk }}', this)">
+              <input type="checkbox"
+                    {% if c.is_active %}checked{% endif %}
+                    onchange="event.preventDefault()">
               <span class="tgl-track"></span>
-            </label>
+          </label>
           </td>
           <td>
             <div class="act-row">

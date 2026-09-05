@@ -178,12 +178,13 @@
               {% endif %}
             {% endwith %}
 
-            <button class="remove-btn"
-                    data-slug="{{ item.product.slug }}"
-                    onclick="removeFromWishlist(this)"
-                    title="Remove from wishlist">
-              ✕
-            </button>
+        <button class="remove-btn"
+                data-slug="{{ item.product.slug }}"
+                data-remove-url="{% url 'remove_wishlist_item' item.product.slug %}"
+                onclick="removeFromWishlist(this)"
+                title="Remove from wishlist">
+            ✕
+        </button>
           </div>
 
         <div class="item-body">
@@ -217,14 +218,26 @@
             </span>
 
             <div class="footer-actions">
-              {% if item.product.total_stock > 0 %}
-              <form method="POST" action="{% url 'move_to_cart' item.product.id %}" class="move-to-cart-form">
-                {% csrf_token %}
-                <button type="submit" class="add-to-cart-btn">Move to Cart</button>
-              </form>
-              {% else %}
-                <button class="add-to-cart-btn" disabled>Out of Stock</button>
-              {% endif %}
+                {% if item.matched_variant %}
+                    {% if item.matched_variant.stock > 0 %}
+                        <form method="POST"
+                              action="{% url 'move_to_cart' item.id %}"
+                              class="move-to-cart-form">
+                            {% csrf_token %}
+                            <button type="submit" class="add-to-cart-btn">
+                                Move to Cart
+                            </button>
+                        </form>
+                    {% else %}
+                        <button type="button" class="add-to-cart-btn" disabled>
+                            Out of Stock
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <button type="button" class="add-to-cart-btn" disabled>
+                        Unavailable
+                    </button>
+                {% endif %}
             </div>
           </div>
         </div>
@@ -314,54 +327,104 @@ function removeFromWishlist(btn) {
         return;
     }
 
+    if (!slug) {
+        showToast('Product information is missing', 'error');
+        return;
+    }
+
     btn.disabled = true;
     btn.innerHTML = '...';
 
-    fetch(`/wishlist/remove/${slug}/`, {
+    // IMPORTANT:
+    // The correct URL includes the wishlist_user prefix.
+    const url = `/wishlist_user/remove/${encodeURIComponent(slug)}/`;
+
+    fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken,
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin'
     })
-    .then(response => {
+    .then(async response => {
+        let data = {};
+
+        try {
+            data = await response.json();
+        } catch (e) {
+            throw new Error(`Invalid server response (${response.status})`);
+        }
+
         if (response.status === 401) {
-            window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
-            throw new Error('Please login');
+            window.location.href =
+                '/login/?next=' + encodeURIComponent(window.location.pathname);
+            return;
         }
+
         if (!response.ok) {
-            return response.json().then(data => {
-                throw new Error(data.error || 'Failed to remove');
-            });
+            throw new Error(
+                data.error ||
+                data.message ||
+                `Failed to remove item (${response.status})`
+            );
         }
-        return response.json();
+
+        return data;
     })
     .then(data => {
+        if (!data) return;
+
+        console.log('Remove wishlist response:', data);
+
         if (data.success) {
+
+            // Update navbar + wishlist page count
             updateWishlistCount(data.wishlist_count || 0);
 
-            card.style.transition = 'opacity .25s ease, transform .25s ease';
-            card.style.opacity = '0';
-            card.style.transform = 'scale(.95)';
+            // Animate card before removing it
+            if (card) {
+                card.style.transition =
+                    'opacity .25s ease, transform .25s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(.95)';
 
-            setTimeout(() => {
-                card.remove();
-                showToast('Removed from wishlist', 'success');
+                setTimeout(() => {
+                    card.remove();
 
-                const remaining = document.querySelectorAll('.wcard').length;
-                if (remaining === 0) {
-                    location.reload();
-                }
-            }, 300);
+                    showToast(
+                        data.message || 'Removed from wishlist',
+                        'success'
+                    );
 
-            updateShopPageWishlistButtons(data.product_id, false);
+                    // If no products remain, reload to show empty state
+                    const remaining =
+                        document.querySelectorAll('.wcard').length;
+
+                    if (remaining === 0) {
+                        window.location.reload();
+                    }
+                }, 300);
+            }
+
+            // Keep shop-page wishlist state in sync
+            updateShopPageWishlistButtons(
+                data.product_uuid,
+                false
+            );
+
+        } else {
+            throw new Error(
+                data.error ||
+                data.message ||
+                'Unable to remove wishlist item'
+            );
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showToast('Error: ' + error.message, 'error');
+        console.error('Wishlist remove error:', error);
+        showToast(error.message, 'error');
+
         btn.disabled = false;
         btn.innerHTML = '✕';
     });
