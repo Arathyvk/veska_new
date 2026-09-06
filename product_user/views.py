@@ -15,7 +15,7 @@ from cart_user.cart_helpers import get_cart, cart_count_payload, wants_json
 from wishlist_user.models import Wishlist
 from category_admin.models import Category
 
-ITEMS_PER_PAGE   = 12
+ITEMS_PER_PAGE   = 8
 MAX_QTY_PER_ITEM = 10
 SHIPPING_FEE     = 79
 
