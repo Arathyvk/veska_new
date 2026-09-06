@@ -130,6 +130,7 @@ def product_image_upload_path(instance, filename):
 
 
 class ProductImage(models.Model):
+    
     variant = models.ForeignKey("ProductVariant",on_delete=models.CASCADE,related_name="images")
     image   = models.ImageField(upload_to=product_image_upload_path)
     order   = models.PositiveIntegerField(default=0)
@@ -180,13 +181,14 @@ class ProductVariant(models.Model):
 
 
 class ProductReview(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews', null=True, blank=True)
-    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='reviews')
+
+    user        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews', null=True, blank=True)
+    product     = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='reviews')
     author_name = models.CharField(max_length=120, default='Anonymous')
-    rating = models.PositiveSmallIntegerField()
-    body = models.TextField()
+    rating      = models.PositiveSmallIntegerField()
+    body        = models.TextField()
     is_approved = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
