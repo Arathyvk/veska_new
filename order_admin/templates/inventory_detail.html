@@ -1,0 +1,373 @@
+{% extends "admin_base.html" %}
+{% load static %}
+{% block title %}{{ product.name }} · Inventory · Admin{% endblock %}
+
+{% block content %}
+<style>
+:root{
+  --bg:#1a1410;--card:#231f1a;--card2:#2c2620;
+  --border:#3a342c;--border2:#4a4038;
+  --rose:#c9967a;--rose2:#e8b49a;
+  --text:#f0ebe4;--muted:#8a7d72;--muted2:#b0a090;
+  --green:#4caf7d;--red:#e05252;--orange:#e09a52;
+  --radius:6px;
+  --head:'Playfair Display',serif;--body:'Jost',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:13px}
+a{text-decoration:none;color:inherit}
+button,input{font-family:var(--body)}
+
+.page-wrap{padding:28px 32px 60px;max-width:960px;margin:0 auto}
+
+.back-link{
+  display:inline-flex;align-items:center;gap:6px;font-size:13px;
+  color:var(--muted2);margin-bottom:20px;transition:color .15s;
+}
+.back-link:hover{color:var(--rose2)}
+
+.prod-header{
+  display:flex;gap:18px;align-items:flex-start;
+  margin-bottom:24px;flex-wrap:wrap;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:20px;
+}
+.prod-header-img{
+  width:80px;height:96px;border-radius:8px;overflow:hidden;
+  background:var(--card2);border:1px solid var(--border2);flex-shrink:0;
+}
+.prod-header-img img{width:100%;height:100%;object-fit:cover}
+.prod-header-info h1{
+  font-family:var(--head);font-size:22px;font-weight:700;
+  color:var(--text);margin-bottom:4px;
+}
+.prod-header-info p{font-size:13px;color:var(--muted2);margin-bottom:10px}
+.prod-badges{display:flex;gap:7px;flex-wrap:wrap}
+.pb{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;
+}
+.pb-listed {background:rgba(76,175,125,.15);color:var(--green);border:1px solid rgba(76,175,125,.3)}
+.pb-unlisted{background:rgba(138,125,114,.12);color:var(--muted2);border:1px solid var(--border2)}
+.pb-blocked {background:rgba(224,82,82,.12);color:var(--red);border:1px solid rgba(224,82,82,.3)}
+.pb-price   {background:rgba(201,150,122,.15);color:var(--rose2);border:1px solid rgba(201,150,122,.3)}
+.pb-stock   {background:var(--card2);color:var(--muted2);border:1px solid var(--border2)}
+
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;margin-bottom:18px;
+}
+.card-head{
+  padding:13px 20px;border-bottom:1px solid var(--border2);
+  background:var(--card2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-head h3{
+  font-size:15px;font-weight:700;color:var(--text);
+  display:flex;align-items:center;gap:8px;
+}
+.card-head h3 svg{width:14px;height:14px;color:var(--rose)}
+.card-body{padding:20px}
+
+.toggle-grid{display:flex;gap:14px;flex-wrap:wrap}
+.toggle-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--card2);border:1px solid var(--border2);
+  border-radius:8px;padding:14px 18px;flex:1;min-width:180px;
+  transition:border-color .2s;
+}
+.toggle-item:hover{border-color:var(--border)}
+.toggle-info{flex:1}
+.toggle-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.toggle-desc{font-size:11px;color:var(--muted2)}
+.toggle-btn{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
+.toggle-btn input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{
+  position:absolute;inset:0;background:var(--border2);
+  border-radius:22px;cursor:pointer;transition:.2s;
+}
+.toggle-slider:before{
+  content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+  background:var(--muted2);left:3px;bottom:3px;transition:.2s;
+}
+input:checked + .toggle-slider{background:var(--green)}
+input:checked + .toggle-slider:before{background:#fff;transform:translateX(18px)}
+.blocked-toggle input:checked + .toggle-slider{background:var(--red)}
+
+.simple-stock-form{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.stock-field-label{
+  font-size:10px;font-weight:700;letter-spacing:.9px;
+  text-transform:uppercase;color:var(--muted2);margin-bottom:7px;
+}
+.big-stock-input{
+  width:110px;border:1.5px solid var(--border2);border-radius:var(--radius);
+  padding:10px 14px;font-size:18px;font-weight:700;text-align:center;
+  outline:none;transition:.15s;background:var(--card2);color:var(--text);
+}
+.big-stock-input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,150,122,.12)}
+.btn-save-stock{
+  padding:11px 24px;background:var(--rose);color:#fff;border:none;
+  border-radius:var(--radius);font-size:13px;font-weight:700;
+  cursor:pointer;transition:opacity .2s;
+}
+.btn-save-stock:hover{opacity:.85}
+.stock-note{font-size:12px;padding-bottom:2px}
+.stock-note .in {color:var(--green);font-weight:600}
+.stock-note .low{color:var(--orange);font-weight:600}
+.stock-note .out{color:var(--red);font-weight:600}
+
+.var-table{width:100%;border-collapse:collapse}
+.var-table th{
+  padding:10px 16px;font-size:10px;font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--muted2);
+  border-bottom:1px solid var(--border);text-align:left;
+  background:var(--card2);
+}
+.var-table td{
+  padding:13px 16px;border-bottom:1px solid rgba(58,52,44,.5);
+  vertical-align:middle;font-size:14px;
+}
+.var-table tr:last-child td{border-bottom:none}
+.var-table tr:hover td{background:rgba(201,150,122,.04)}
+
+.size-pill{
+  display:inline-block;padding:3px 12px;
+  background:var(--card2);border:1px solid var(--border2);
+  border-radius:6px;font-weight:700;font-size:13px;color:var(--text);
+}
+.var-stock-input{
+  width:80px;border:1.5px solid var(--border2);border-radius:var(--radius);
+  padding:7px 10px;font-size:14px;font-weight:700;text-align:center;
+  outline:none;transition:.15s;background:var(--card2);color:var(--text);
+}
+.var-stock-input:focus{border-color:var(--rose)}
+.btn-var-save{
+  padding:7px 16px;background:var(--rose);color:#fff;border:none;
+  border-radius:var(--radius);font-size:12px;font-weight:600;
+  cursor:pointer;transition:opacity .2s;
+}
+.btn-var-save:hover{opacity:.85}
+.stock-in {color:var(--green);font-weight:700}
+.stock-low{color:var(--orange);font-weight:700}
+.stock-out{color:var(--red);font-weight:700}
+
+.messages-wrap{
+  position:fixed;bottom:22px;right:22px;z-index:999;
+  display:flex;flex-direction:column;gap:8px;
+}
+.msg-toast{
+  background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:11px 15px;font-size:12.5px;display:flex;align-items:center;gap:9px;
+  min-width:220px;box-shadow:0 6px 28px rgba(0,0,0,.45);
+}
+.msg-toast.success{border-left:3px solid var(--green)}
+.msg-toast.error  {border-left:3px solid var(--red)}
+.msg-toast.warning{border-left:3px solid var(--orange)}
+</style>
+
+{% if messages %}
+<div class="messages-wrap" id="msg-wrap">
+  {% for msg in messages %}
+  <div class="msg-toast {{ msg.tags }}">
+    <span style="font-size:15px">
+      {% if msg.tags == 'success' %}✓{% elif msg.tags == 'error' %}✕{% else %}⚠{% endif %}
+    </span>
+    {{ msg }}
+  </div>
+  {% endfor %}
+</div>
+<script>setTimeout(()=>{ const w=document.getElementById('msg-wrap'); if(w){w.style.opacity='0';setTimeout(()=>w.remove(),400);} }, 3500)</script>
+{% endif %}
+
+<div class="page-wrap">
+
+  <a href="{% url 'admin_inventory_list' %}" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Back to Inventory
+  </a>
+
+  <div class="prod-header">
+    <div class="prod-header-img">
+        {% with variant=product.variants.first %}
+            {% if variant %}
+                {% with img=variant.images.first %}
+                    {% if img %}
+                        <img src="{{ img.image.url }}" alt="{{ product.name }}">
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="prod-header-info">
+      <h1>{{ product.name }}</h1>
+      <p>{{ product.category|default:"No category" }}</p>
+      <div class="prod-badges">
+        {% if product.is_active and not product.is_blocked %}
+          <span class="pb pb-listed">✓ Active</span>
+        {% elif not product.is_active %}
+          <span class="pb pb-unlisted">Inactive</span>
+        {% endif %}
+        {% if product.is_blocked %}
+          <span class="pb pb-blocked">⛔ Blocked</span>
+        {% endif %}
+        <span class="pb pb-price">₹{{ product.price|floatformat:0 }}</span>
+        <span class="pb pb-stock">Stock: {{ product.total_stock }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        Visibility
+      </h3>
+    </div>
+    <div class="card-body">
+      <div class="toggle-grid">
+
+        <form method="POST" action="{% url 'admin_inventory_toggle_status' product.pk %}"
+              class="toggle-item">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="toggle_listed">
+          <div class="toggle-info">
+            <div class="toggle-label">Listed</div>
+            <div class="toggle-desc">Show on shop page</div>
+          </div>
+          <label class="toggle-btn">
+            <input type="checkbox" {% if product.is_listed %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </form>
+
+        <form method="POST" action="{% url 'admin_inventory_toggle_status' product.pk %}"
+              class="toggle-item">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="toggle_blocked">
+          <div class="toggle-info">
+            <div class="toggle-label">Blocked</div>
+            <div class="toggle-desc">Prevent purchase</div>
+          </div>
+          <label class="toggle-btn blocked-toggle">
+            <input type="checkbox" {% if product.is_blocked %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  {% if variants %}
+  <div class="card">
+    <div class="card-head">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        </svg>
+        Variant Stock &nbsp;
+        <span style="font-family:var(--body);font-size:12px;font-weight:400;color:var(--muted2)">
+          {{ variants.count }} size{{ variants.count|pluralize }}
+        </span>
+      </h3>
+    </div>
+    <div style="padding:0">
+      <table class="var-table">
+        <thead>
+          <tr>
+            <th>Size</th>
+            <th>Price</th>
+            <th>Current Stock</th>
+            <th>Update Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for variant in variants %}
+          <tr>
+            <td><span class="size-pill">{{ variant.size }}</span></td>
+            <td style="font-weight:600;color:var(--rose2)">
+              {% if variant.price %}
+                ₹{{ variant.price|floatformat:0 }}
+              {% else %}
+                <span style="color:var(--muted2)">₹{{ product.price|floatformat:0 }} (default)</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if variant.stock == 0 %}
+                <span class="stock-out">0 — Out of Stock</span>
+              {% elif variant.stock <= low_stock_threshold %}
+                <span class="stock-low">{{ variant.stock }} — Low</span>
+              {% else %}
+                <span class="stock-in">{{ variant.stock }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="POST" action="{% url 'admin_inventory_update_stock' product.pk %}"
+                    style="display:flex;gap:8px;align-items:center">
+                {% csrf_token %}
+                <input type="hidden" name="variant_id" value="{{ variant.pk }}">
+                <input type="number" name="stock" class="var-stock-input"
+                       value="{{ variant.stock }}" min="0">
+                <button type="submit" class="btn-var-save"
+                        onclick="return confirm('Update stock for size {{ variant.size }}?')">
+                  Save
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="card-head">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        </svg>
+        Stock
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{% url 'admin_inventory_update_stock' product.pk %}"
+            class="simple-stock-form">
+        {% csrf_token %}
+        <div>
+          <div class="stock-field-label">Current Stock</div>
+          <input type="number" name="stock" class="big-stock-input"
+                 value="{{ product.total_stock }}" min="0">
+        </div>
+        <div>
+          <button type="submit" class="btn-save-stock"
+                  onclick="return confirm('Update stock for {{ product.name }}?')">
+            Save Stock
+          </button>
+        </div>
+        <div class="stock-note" style="padding-bottom:4px">
+          {% if product.total_stock == 0 %}
+            <span class="out">⚠ Out of stock</span>
+          {% elif product.total_stock <= low_stock_threshold %}
+            <span class="low">⚠ Low stock ({{ product.total_stock }} left)</span>
+          {% else %}
+            <span class="in">✓ In stock ({{ product.total_stock }} units)</span>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

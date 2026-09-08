@@ -10,7 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+import cloudinary
+from decouple import config
+from django.contrib.messages import constants as messages
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +28,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_xdgw0jk@wn0*cm*pp-cl6judha)+t_!r9it6!g!m6a(d=)kg-'
-
+SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']  
 
 
 # Application definition
@@ -37,16 +44,46 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+
 
     'allauth',
     'allauth.account',
     'allauth.socialaccount',    
     'allauth.socialaccount.providers.google',
 
+    'cloudinary',
+    'cloudinary_storage',
+
+
     'users',
+    'admin_side',
+    'customers',
+    'product_user',
+    'product_admin',
+    'cart_user',
+    'category_admin',
+    'wishlist_user',
+    'order_user',
+    'order_admin',
+    'checkout_page',
+    'wallet_user',
+    'wallet_admin',
+    'offer_admin',
+    'coupon_admin',
+    'about_us',
+    'dashboard',
+
 ]
 
 SITE_ID = 1
+
+cloudinary.config(
+    cloud_name=config('CLOUDINARY_CLOUD_NAME'),
+    api_key=config('CLOUDINARY_API_KEY'),
+    api_secret=config('CLOUDINARY_API_SECRET'),
+    )
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -61,7 +98,9 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = [
+    'users.backends.EmailBackend',
     "django.contrib.auth.backends.ModelBackend",
+
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
@@ -77,6 +116,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'cart_user.context_processors.cart_nav_counts',
+
             ],
         },
     },
@@ -90,11 +131,14 @@ WSGI_APPLICATION = 'veska.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
@@ -132,12 +176,85 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'error',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.INFO: 'info',
+}
+
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+AUTH_USER_MODEL = 'users.User'
+
+
+ACCOUNT_ADAPTER = 'core.adapters.AccountAdapter'
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1800        
+SESSION_SAVE_EVERY_REQUEST = True  
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+
+ACCOUNT_INACTIVE_URL = '/accounts/inactive/' 
+
+
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET')
+
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+
+
+TIME_ZONE = 'Asia/Kolkata' 
+USE_TZ = True
+
+

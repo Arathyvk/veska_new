@@ -1,0 +1,431 @@
+{% extends "admin_base.html" %}
+{% load static %}
+{% block title %}Inventory · Admin · Veska{% endblock %}
+{% block content %}
+<style>
+:root{--bg:#1a1714;--card:#252118;--card2:#2e2925;--card3:#342e28;--border:#3a342c;--border2:#4a4038;--text:#f0ebe4;--muted:#8a7d72;--muted2:#b0a090;--terra:#c9967a;--terra2:#e8b49a;--terra-pale:rgba(201,150,122,.12);--green:#4caf7d;--green-pale:rgba(76,175,125,.14);--red:#e05252;--red-pale:rgba(224,82,82,.14);--orange:#e09a52;--orange-pale:rgba(224,154,82,.14);--radius:6px;--radius-lg:10px;--radius-xl:14px;--head:'Georgia',serif;--body:system-ui,-apple-system,sans-serif;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:13px}
+a{text-decoration:none;color:inherit}button,input,select{font-family:var(--body)}
+
+.wrap{padding:24px 28px 60px;max-width:133pc;margin:0 auto}
+.pg-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.pg-hd h1{font-family:var(--head);font-size:24px;font-weight:700;color:var(--text)}
+.pg-hd p{font-size:15px;color:var(--muted);margin-top:3px}
+
+.stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:22px}
+.scard{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px 15px;cursor:pointer;transition:all .15s;text-decoration:none;display:block}
+.scard:hover{border-color:var(--terra)}.scard.on{border-color:var(--terra);background:rgba(201,150,122,.1)}
+.scard-lbl{font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:7px}
+.scard-val{font-family:var(--head);font-size:24px;font-weight:700;color:var(--text);line-height:1}
+.scard-val.red{color:var(--red)}.scard-val.orange{color:var(--orange)}.scard-val.green{color:var(--green)}
+
+.filter-bar{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:13px 17px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
+.fg label{font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2)}
+.finput,.fselect{background:var(--card);border:1.5px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:7px 10px;font-size:15px;outline:none;transition:.15s;width:100%}
+.finput:focus,.fselect:focus{border-color:var(--terra)}
+.finput::placeholder{color:var(--muted)}
+.fselect{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' fill='none' stroke='%238a7d72' stroke-width='2.5' viewBox='0 0 24 24'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:26px}
+.fselect option{background:var(--card2)}
+.sr{position:relative;flex:2;min-width:180px}
+.sr svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--muted);pointer-events:none}
+.sr .finput{padding-left:29px}
+.btn-apply{padding:8px 17px;background:var(--terra);color:#1a1714;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn-apply:hover{background:var(--terra2)}
+.btn-clear{padding:8px 12px;background:none;border:1.5px solid var(--border2);color:var(--muted2);border-radius:var(--radius);font-size:15px;cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.btn-clear:hover{border-color:var(--red);color:var(--red)}
+
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--terra-pale);border:1px solid rgba(201,150,122,.3);border-radius:20px;font-size:15px;font-weight:600;color:var(--terra2)}
+.pill a{color:var(--terra2);opacity:.65;font-size:13px;line-height:1}
+.pill a:hover{opacity:1}
+.pill-red{background:var(--red-pale);border:1px solid rgba(224,82,82,.25);color:var(--red);text-decoration:none;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:15px;font-weight:600}
+
+.res-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;flex-wrap:wrap;gap:8px}
+.res-cnt{font-size:15px;color:var(--muted)}.res-cnt strong{color:var(--text)}
+
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden}
+.dtbl{width:100%;border-collapse:collapse}
+.dtbl thead tr{background:var(--card3);border-bottom:1px solid var(--border)}
+.dtbl th{padding:10px 13px;font-size:15px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted2);text-align:left;white-space:nowrap}
+.dtbl tbody tr{border-bottom:1px solid rgba(58,52,44,.45);transition:background .12s}
+.dtbl tbody tr:last-child{border-bottom:none}
+.dtbl tbody tr:hover{background:rgba(201,150,122,.04)}
+.dtbl td{padding:11px 13px;vertical-align:middle;font-size:15px}
+
+.pc{display:flex;gap:10px;align-items:center}
+.pimg{width:42px;height:50px;border-radius:var(--radius);overflow:hidden;background:var(--card2);border:1px solid var(--border2);flex-shrink:0}
+.pimg img{width:100%;height:100%;object-fit:cover}
+.pname{font-weight:600;color:var(--text);font-size:15px;margin-bottom:2px}
+.pcat{font-size:15px;color:var(--muted)}
+
+.sv{font-weight:700;font-size:14px}
+.sv.in{color:var(--green)}.sv.low{color:var(--orange)}.sv.out{color:var(--red)}
+.sp{display:inline-block;padding:1px 7px;border-radius:8px;font-size:15px;font-weight:700;margin-left:4px}
+.sp-out{background:var(--red-pale);color:var(--red)}.sp-low{background:var(--orange-pale);color:var(--orange)}
+
+.qf{display:flex;align-items:center;gap:6px}
+.si{width:62px;background:var(--card2);border:1.5px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:5px 7px;font-size:15px;text-align:center;outline:none;transition:.15s}
+.si:focus{border-color:var(--terra)}
+.btn-sv{padding:5px 10px;background:var(--card3);border:1px solid var(--border2);color:var(--muted2);border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-sv:hover{background:var(--terra);border-color:var(--terra);color:#1a1714}
+
+.tg-wrap{display:flex;flex-direction:column;gap:5px}
+.tg-row{display:flex;align-items:center;gap:7px}
+.tg-lbl{font-size:14px;color:var(--muted2);min-width:48px}
+.tg{position:relative;width:34px;height:18px;flex-shrink:0}
+.tg input{opacity:0;width:0;height:0}
+.tg-track{position:absolute;inset:0;background:var(--border2);border-radius:10px;cursor:pointer;transition:.2s}
+.tg-track::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tg input:checked + .tg-track{background:var(--green)}
+.tg input:checked + .tg-track::after{transform:translateX(16px)}
+.tg.blk input:checked + .tg-track{background:var(--red)}
+
+.btn-det{display:inline-flex;align-items:center;gap:4px;padding:6px 11px;background:var(--card2);border:1px solid var(--border2);color:var(--muted2);border-radius:var(--radius);font-size:14px;font-weight:600;transition:.15s;text-decoration:none}
+.btn-det:hover{border-color:var(--terra);color:var(--terra2)}
+
+/* PAGINATION */
+
+.table-footer{
+  width:100%;
+  padding:16px 18px;
+  border-top:1px solid var(--border);
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+
+  background:var(--card);
+}
+
+.page-info{
+  font-size:13px;
+  color:var(--muted);
+}
+
+.page-info strong{
+  color:var(--text);
+}
+
+/* RIGHT SIDE */
+
+.pagination{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+/* BUTTONS */
+
+.pg-btn{
+  min-width:70px;
+  height:34px;
+
+  padding:0 14px;
+
+  border-radius:8px;
+  border:1px solid var(--border2);
+
+  background:var(--card2);
+  color:var(--muted2);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:12px;
+  font-weight:600;
+
+  text-decoration:none;
+
+  transition:var(--transition);
+}
+
+.pg-btn:hover{
+  border-color:var(--terra);
+  color:var(--terra2);
+}
+
+.pg-btn.disabled{
+  opacity:.35;
+  pointer-events:none;
+}
+
+/* PAGE NUMBER */
+
+.pg-num{
+  width:34px;
+  height:34px;
+
+  border-radius:8px;
+  border:1px solid var(--border2);
+
+  background:var(--card2);
+  color:var(--muted2);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  text-decoration:none;
+
+  font-size:12px;
+  font-weight:600;
+
+  transition:var(--transition);
+}
+
+.pg-num:hover{
+  border-color:var(--terra);
+  color:var(--terra2);
+}
+
+.pg-num.active{
+  background:var(--terra);
+  border-color:var(--terra);
+  color:#1a1714;
+}
+
+/* DOTS */
+
+.dots{
+  color:var(--muted);
+  padding:0 4px;
+}
+
+/* MOBILE */
+
+@media (max-width:768px){
+
+  .table-footer{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .pagination{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+}
+
+.empty{text-align:center;padding:56px 24px;color:var(--muted)}
+.empty svg{width:44px;height:44px;margin:0 auto 14px;display:block;opacity:.3}
+.empty h3{font-size:17px;font-weight:600;color:var(--muted2);margin-bottom:6px}
+</style>
+
+<div class="wrap">
+  <div class="pg-hd">
+    <div><h1>Inventory & Stock</h1><p>Manage listings and stock levels</p></div>
+  </div>
+
+  <div class="stat-row">
+    <a href="{% url 'admin_inventory_list' %}" class="scard {% if not stock_filter and not status_filter %}on{% endif %}"><div class="scard-lbl">Total</div><div class="scard-val">{{ inv_stats.subtotal|default:"0" }}</div></a>
+    <a href="?status=listed" class="scard {% if status_filter == 'listed' %}on{% endif %}"><div class="scard-lbl">Listed</div><div class="scard-val green">{{ inv_stats.listed }}</div></a>
+    <a href="?status=unlisted" class="scard {% if status_filter == 'unlisted' %}on{% endif %}"><div class="scard-lbl">Unlisted</div><div class="scard-val">{{ inv_stats.unlisted }}</div></a>
+    <a href="?status=blocked" class="scard {% if status_filter == 'blocked' %}on{% endif %}"><div class="scard-lbl">Blocked</div><div class="scard-val red">{{ inv_stats.blocked }}</div></a>
+    <a href="?stock=out" class="scard {% if stock_filter == 'out' %}on{% endif %}"><div class="scard-lbl">Out of Stock</div><div class="scard-val red">{{ inv_stats.out_of_stock }}</div></a>
+    <a href="?stock=low" class="scard {% if stock_filter == 'low' %}on{% endif %}"><div class="scard-lbl">Low Stock</div><div class="scard-val orange">{{ inv_stats.low_stock }}</div></a>
+  </div>
+
+  <form method="GET" action="{% url 'admin_inventory_list' %}">
+    <div class="filter-bar">
+       <div class="fg sr" style="flex:2;min-width:170px">
+    <label>Search</label>
+    <input type="text"
+       id="searchInput"
+       name="q"
+       class="finput"
+       value="{{ q }}"
+       placeholder="Product name or category…">
+
+<span id="searchError" style="color:#fff;font-size:13px;"></span>
+</div>
+            <div class="fg"><label>Category</label>
+        <select name="category" class="fselect">
+          <option value="">All Categories</option>
+          {% for cat in all_categories %}<option value="{{ cat.slug }}" {% if cat_filter == cat.slug %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="fg"><label>Stock</label>
+        <select name="stock" class="fselect">
+          <option value="">All Stock</option>
+          <option value="in"  {% if stock_filter == 'in'  %}selected{% endif %}>In Stock</option>
+          <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>Low Stock (≤{{ LOW_STOCK }})</option>
+          <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>Out of Stock</option>
+        </select>
+      </div>
+      <div class="fg"><label>Status</label>
+        <select name="status" class="fselect">
+          <option value="">All Statuses</option>
+          <option value="listed"   {% if status_filter == 'listed'   %}selected{% endif %}>Listed</option>
+          <option value="unlisted" {% if status_filter == 'unlisted' %}selected{% endif %}>Unlisted</option>
+          <option value="blocked"  {% if status_filter == 'blocked'  %}selected{% endif %}>Blocked</option>
+        </select>
+      </div>
+      <div class="fg"><label>Sort</label>
+        <select name="sort" class="fselect">
+          <option value="name"   {% if sort == 'name'   %}selected{% endif %}>Name A–Z</option>
+          <option value="-name"  {% if sort == '-name'  %}selected{% endif %}>Name Z–A</option>
+          <option value="stock"  {% if sort == 'stock'  %}selected{% endif %}>Stock: Low→High</option>
+          <option value="-stock" {% if sort == '-stock' %}selected{% endif %}>Stock: High→Low</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:7px;align-items:flex-end;flex-shrink:0;padding-top:17px">
+        <button type="submit" class="btn-apply">Filter</button>
+        {% if has_filters %}<a href="{% url 'admin_inventory_list' %}" class="btn-clear">✕ Clear</a>{% endif %}
+      </div>
+    </div>
+  </form>
+
+  {% if has_filters %}
+  <div class="pills">
+    {% if q %}<span class="pill">🔍 "{{ q }}" <a href="?{% if cat_filter %}category={{ cat_filter }}&{% endif %}{% if stock_filter %}stock={{ stock_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort={{ sort }}">✕</a></span>{% endif %}
+    {% if cat_filter %}<span class="pill">📁 {{ cat_filter }} <a href="?{% if q %}q={{ q }}&{% endif %}{% if stock_filter %}stock={{ stock_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort={{ sort }}">✕</a></span>{% endif %}
+    {% if stock_filter %}<span class="pill">📦 {{ stock_filter|title }} Stock <a href="?{% if q %}q={{ q }}&{% endif %}{% if cat_filter %}category={{ cat_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort={{ sort }}">✕</a></span>{% endif %}
+    {% if status_filter %}<span class="pill">🏷️ {{ status_filter|title }} <a href="?{% if q %}q={{ q }}&{% endif %}{% if cat_filter %}category={{ cat_filter }}&{% endif %}{% if stock_filter %}stock={{ stock_filter }}&{% endif %}sort={{ sort }}">✕</a></span>{% endif %}
+    <a href="{% url 'admin_inventory_list' %}" class="pill-red">✕ Clear all</a>
+  </div>
+  {% endif %}
+
+  <div class="res-row">
+    <div class="res-cnt">{% if total_count == 0 %}No products found{% else %}Showing <strong>{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong> of <strong>{{ total_count }}</strong> product{{ total_count|pluralize }}{% endif %}</div>
+  </div>
+
+  <div class="tbl-wrap">
+    {% if products %}
+    <table class="dtbl">
+      <thead>
+        <tr><th>Product</th><th>Price</th><th>Stock</th><th>Quick Update</th><th>Visibility</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td>
+            <div class="pc">
+              <div class="pimg">
+                {% with variant=product.variants.first %}
+                    {% if variant %}
+                        {% with img=variant.images.first %}
+                            {% if img %}
+                                <img src="{{ img.image.url }}" alt="{{ product.name }}">
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                {% endwith %}
+              </div>
+              <div><div class="pname">{{ product.name }}</div><div class="pcat">{{ product.category.name|default:"—" }}</div></div>
+            </div>
+          </td>
+          <td style="font-weight:700;font-family:var(--head);font-size:14px;color:var(--terra2)">
+            ₹{{ product.price|floatformat:0 }}
+            {% if product.variants.exists %}<div style="font-size:11px;color:var(--muted);font-family:var(--body);font-weight:400">{{ product.variants.count }} size{{ product.variants.count|pluralize }}</div>{% endif %}
+          </td>
+          <td>
+            {% with stock=product.variant_stock_sum %}
+            {% if stock == 0 %}<span class="sv out">0<span class="sp sp-out">OOS</span></span>
+            {% elif stock <= LOW_STOCK %}<span class="sv low">{{ stock }}<span class="sp sp-low">Low</span></span>
+            {% else %}<span class="sv in">{{ stock }}</span>{% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            {% if not product.variants.exists %}
+            <form method="POST" action="{% url 'admin_inventory_update_stock' product.pk %}" class="qf">
+              {% csrf_token %}
+              <input type="number" name="stock" class="si" value="{{ product.total_stock }}" min="0">
+              <button type="submit" class="btn-sv" onclick="return confirm('Update stock?')">Save</button>
+            </form>
+            {% else %}<a href="{% url 'admin_inventory_detail' product.pk %}" style="font-size:12px;color:var(--terra2)">Edit variants →</a>{% endif %}
+          </td>
+          <td>
+            <div class="tg-wrap">
+              <form method="POST" action="{% url 'admin_inventory_toggle_status' product.pk %}" class="tg-row">
+                {% csrf_token %}<input type="hidden" name="action" value="toggle_listed"><input type="hidden" name="next" value="list">
+                <span class="tg-lbl">Listed</span>
+                <label class="tg"><input type="checkbox" {% if product.is_listed %}checked{% endif %} onchange="this.form.submit()"><span class="tg-track"></span></label>
+              </form>
+              <form method="POST" action="{% url 'admin_inventory_toggle_status' product.pk %}" class="tg-row">
+                {% csrf_token %}<input type="hidden" name="action" value="toggle_blocked"><input type="hidden" name="next" value="list">
+                <span class="tg-lbl">Blocked</span>
+                <label class="tg blk"><input type="checkbox" {% if product.is_blocked %}checked{% endif %} onchange="this.form.submit()"><span class="tg-track"></span></label>
+              </form>
+            </div>
+          </td>
+          <td><a href="{% url 'admin_inventory_detail' product.pk %}" class="btn-det"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Details</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if paginator.num_pages > 1 %}
+    <div class="pag">
+      <div class="pag-info">Page {{ page_obj.number }} of {{ paginator.num_pages }}</div>
+      <div class="pag-links">
+        {% if page_obj.has_previous %}<a href="?{{ filter_qs }}&page={{ page_obj.previous_page_number }}" class="pg">‹ Prev</a>{% else %}<span class="pg off">‹ Prev</span>{% endif %}
+        {% for num in paginator.page_range %}{% if num == page_obj.number %}<span class="pg active">{{ num }}</span>{% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}<a href="?{{ filter_qs }}&page={{ num }}" class="pg">{{ num }}</a>{% endif %}{% endfor %}
+        {% if page_obj.has_next %}<a href="?{{ filter_qs }}&page={{ page_obj.next_page_number }}" class="pg">Next ›</a>{% else %}<span class="pg off">Next ›</span>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg><h3>No products found</h3><p>{% if has_filters %}Try clearing your filters.{% else %}No products yet.{% endif %}</p></div>
+    {% endif %}
+  </div>
+<div class="table-footer">
+  <div class="page-info">
+    Page {{ page_obj.number }} of {{ paginator.num_pages }}
+    · {{ paginator.count }} products
+  </div>
+
+  <div class="pagination">
+
+    {% if page_obj.has_previous %}
+      <a href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}page={{ page_obj.previous_page_number }}" class="pg-btn">
+        Prev
+      </a>
+    {% else %}
+      <span class="pg-btn disabled">Prev</span>
+    {% endif %}
+
+    {% for num in paginator.page_range %}
+      {% if num == page_obj.number %}
+        <span class="pg-num active">{{ num }}</span>
+
+      {% elif num > page_obj.number|add:"-2" and num < page_obj.number|add:"2" %}
+        <a href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}page={{ num }}" class="pg-num">
+          {{ num }}
+        </a>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}page={{ page_obj.next_page_number }}" class="pg-btn">
+        Next
+      </a>
+    {% else %}
+      <span class="pg-btn disabled">Next</span>
+    {% endif %}
+
+  </div>
+</div>
+</div>
+
+<script>
+document.querySelector("form").addEventListener("submit", function(e) {
+    const input = document.getElementById("searchInput");
+    const error = document.getElementById("searchError");
+
+    const value = input.value.trim();
+
+    if (value && !/^[A-Za-z\s]+$/.test(value)) {
+        e.preventDefault();
+        error.textContent = "Only letters are allowed for search.";
+    } else {
+        error.textContent = "";
+    }
+});
+</script>
+{% endblock %}

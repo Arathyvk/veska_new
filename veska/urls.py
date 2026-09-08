@@ -1,25 +1,35 @@
-"""
-URL configuration for veska project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path,include
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),
     path('accounts/',include('allauth.urls')),
     path('',include('users.urls')),
+    path('customers/',include('customers.urls')),
+    path('newadmin/',include('admin_side.urls')),
+    path('product_user/',include('product_user.urls')),
+    path('cart_user/',include('cart_user.urls')),
+    path('product_admin/',include('product_admin.urls')),
+    path('category_admin/',include('category_admin.urls')),
+    path('wishlist_user/',include('wishlist_user.urls')),
+    path('order_user/',include('order_user.urls')),
+    path('checkout_page/',include('checkout_page.urls')),
+    path('order_admin/',include('order_admin.urls')),
+    path('wallet_user/',include('wallet_user.urls')),
+    path('wallet_user/',include('wallet_user.urls')),
+    path('offer_admin/',include('offer_admin.urls')),
+    path('coupon_admin/',include('coupon_admin.urls')),
+    path('about/',include('about_us.urls')),
+    path('wallet_admin/',include('wallet_admin.urls')),
+    path('dashboard/',include('dashboard.urls')),
 
-]
+
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler404 = 'core.views.custom_404'
+handler500 = 'core.views.custom_500'
+handler403 = 'core.views.custom_403'
+handler400 = 'core.views.custom_400'

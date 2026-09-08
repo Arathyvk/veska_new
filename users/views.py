@@ -1,5 +1,6 @@
 import re
 import logging
+import uuid as _uuid
 
 from django.contrib import messages
 from django.shortcuts import render,redirect
@@ -9,13 +10,13 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
-import uuid as _uuid
 from django.urls import reverse
 from users.utils import apply_referral_for_new_user
+
 from users.models import User, ReferralCode
 from product_admin.models import Product
 from cart_user.models import Cart
- 
+
 from core.otp import (
     gen_otp, send_otp_email, is_otp_expired, save_otp_to_session, 
     get_otp_from_session, clear_otp_from_session,
