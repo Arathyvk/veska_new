@@ -32,7 +32,20 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']  
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "13.232.177.23",
+    "arathy.online",
+    "www.arathy.online",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://arathy.online",
+    "https://arathy.online",
+    "http://www.arathy.online",
+    "https://www.arathy.online",
+]    
 
 
 # Application definition
@@ -257,4 +270,48 @@ STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
 TIME_ZONE = 'Asia/Kolkata' 
 USE_TZ = True
 
+# Logger
 
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} | {levelname} | {name} | {message}",
+            "style": "{",
+        },
+    },
+
+    "handlers": {
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOG_DIR / "django.log",
+            "formatter": "verbose",
+        },
+
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+
+    "loggers": {
+        "django": {
+            "handlers": ["file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+
+        "veska": {
+            "handlers": ["file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
