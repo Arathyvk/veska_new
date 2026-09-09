@@ -32,17 +32,15 @@ def cart_total_items(cart):
     return sum(item.quantity for item in cart.items.all())
 
 
-def wishlist_count_for(request):
+def wishlist_count_for(request):      
     user = getattr(request, "user", None)
 
     if not user or not user.is_authenticated:
         return 0
-
+    
     wl = Wishlist.objects.filter(user=user).first()
-
     if not wl:
         return 0
-
     return wl.items.count() 
 
 
