@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from datetime import datetime
 from django.utils import timezone as tz
 from django.http import JsonResponse
@@ -31,6 +31,14 @@ def admin_coupon_list(request):
     qs = Coupon.objects.all().order_by('-id')
 
     q = request.GET.get('q', '').strip()
+    now = timezone.now()
+
+    qs=Coupon.objects.annotate(monthly_usage=Count(
+        "usages",
+        filte=Q(usages__used_at__year=now.year,
+                usages__used_at__month=now.month
+                )
+        )).order_by('-id')
 
     if q:
         qs = qs.filter(
