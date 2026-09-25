@@ -666,7 +666,7 @@ def sales_report_pdf(request):
     ]
 
     rows = [[
-        Paragraph('<b>Order</b>',      s_h),
+        Paragraph('<b>Order</b>',        s_h),
         Paragraph('<b>Customer</b>',     s_h),
         Paragraph('<b>Date</b>',         s_h),
         Paragraph('<b>Status</b>',       s_h),
