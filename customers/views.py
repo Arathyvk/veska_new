@@ -352,6 +352,7 @@ def account_address_edit(request, pk):
         "action": "edit"
     })
 
+
 @login_required
 @require_POST
 def account_address_delete(request, pk):
@@ -359,6 +360,7 @@ def account_address_delete(request, pk):
     address.delete()
     messages.success(request, "Address deleted successfully.")
     return redirect("account_address")
+
 
 @login_required
 @require_POST

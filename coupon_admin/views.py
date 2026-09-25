@@ -35,7 +35,7 @@ def admin_coupon_list(request):
 
     qs=Coupon.objects.annotate(monthly_usage=Count(
         "usages",
-        filte=Q(usages__used_at__year=now.year,
+        filter=Q(usages__used_at__year=now.year,
                 usages__used_at__month=now.month
                 )
         )).order_by('-id')
@@ -54,7 +54,7 @@ def admin_coupon_list(request):
     elif active_f == '0':
         qs = qs.filter(is_active=False)
 
-    paginator = Paginator(qs, 15)
+    paginator = Paginator(qs, 10)
 
     page_obj = paginator.get_page(
         request.GET.get('page', 1)
