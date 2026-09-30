@@ -62,13 +62,17 @@ def wishlist_toggle(request, slug):
     wl, _ = Wishlist.objects.get_or_create(user=request.user)
 
     try:
-        payload = json.loads(request.body or '{}')
+        data = json.loads(request.body or '{}')
     except json.JSONDecodeError:
-        payload = {}
-    selected_size = payload.get('size') or None
-    selected_color = payload.get('color') or None
+        data = {}
 
-    color_variants_exist = product.variants.filter(color__isnull=False).exclude(color='').exists()
+    selected_size = data.get('size') or None
+    selected_color = data.get('color') or None
+
+    color_variants_exist = product.variants.filter(
+        color__isnull=False
+    ).exclude(color='').exists()
+
     if product.variants.exists():
         if not selected_size or (color_variants_exist and not selected_color):
             return JsonResponse({
@@ -77,7 +81,9 @@ def wishlist_toggle(request, slug):
             }, status=400)
 
         if not ProductVariant.objects.filter(
-            product=product, size=selected_size, color=selected_color
+            product=product,
+            size=selected_size,
+            color=selected_color
         ).exists():
             return JsonResponse({
                 'success': False,
