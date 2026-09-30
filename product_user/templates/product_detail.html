@@ -43,9 +43,9 @@ button,input,textarea{font-family:var(--body)}
 .gallery-main{position:relative;border-radius:var(--radius-xl);overflow:hidden;
   background:var(--parchment);border:1px solid var(--border);cursor:zoom-in;
   user-select:none;aspect-ratio:4/5;box-shadow:var(--shadow-md)}
-.gallery-main img{width:100%;height:100%;object-fit:cover;transition:transform .1s ease;
-  pointer-events:none;display:block}
-.gallery-main.zoomed{cursor:zoom-out}
+.gallery-main img{width:100%;height:100%;object-fit:contain;transition:transform .25s ease;
+  pointer-events:none;display:block;will-change: transform}
+.gallery-main.zoomed{transition:none; cursor:zoom-out}
 .zoom-hint{position:absolute;bottom:14px;right:14px;
   background:rgba(30,26,23,.55);backdrop-filter:blur(6px);color:#fff;border-radius:40px;
   font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
@@ -540,10 +540,14 @@ button,input,textarea{font-family:var(--body)}
 <form method="POST" action="{% url 'wishlist_toggle' product.slug %}" id="wishlistForm" style="display: inline;">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ request.path }}">
-   <button type="button"
-        class="btn-wishlist {% if in_wishlist %}wishlisted{% endif %}"
-        data-slug="{{ product.slug }}"
-        onclick="toggleWishlist(this, '{{ product.slug }}')">
+    <input type="hidden" name="size" id="wishlistSize">
+    <input type="hidden" name="color" id="wishlistColor">
+    <input type="hidden" name="variant_id" id="wishlistVariant">
+    <button type="button"
+            class="btn-wishlist {% if in_wishlist %}wishlisted{% endif %}"
+            data-slug="{{ product.slug }}"
+            data-wishlisted="{% if in_wishlist %}true{% else %}false{% endif %}"
+            onclick="toggleWishlist(this, '{{ product.slug }}')">
     <svg viewBox="0 0 24 24"
          fill="{% if in_wishlist %}var(--terra){% else %}none{% endif %}"
          stroke="currentColor"
@@ -945,6 +949,23 @@ document.addEventListener("DOMContentLoaded", function () {
         if (mainImg) {
             const firstImage = images[0];
             if (typeof firstImage === "string") mainImg.src = firstImage;
+            // RESET any existing zoom state
+            mainImg.style.transform = "scale(1)";
+            mainImg.style.transformOrigin = "center center";
+        }
+
+        const galleryMain = document.getElementById("galleryMain");
+        if (galleryMain) galleryMain.classList.remove("zoomed");
+
+        // also reset currentSlide + dots
+        if (typeof galleryImages !== "undefined") {
+            galleryImages.length = 0;
+            images.forEach(u => galleryImages.push(u));
+            currentSlide = 0;
+            document.querySelectorAll(".gallery-dot").forEach((d, i) =>
+                d.classList.toggle("active", i === 0));
+            document.querySelectorAll(".gallery-thumb").forEach((t, i) =>
+                t.classList.toggle("active", i === 0));
         }
 
         const thumbnails = document.querySelectorAll(".gallery-thumb img");
@@ -1315,21 +1336,54 @@ function changeSlide(direction) {
 }
 
 function toggleZoom(event, el) {
-    el.classList.toggle("zoomed");
-    if (el.classList.contains("zoomed")) {
-        const rect = el.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 100;
-        const y = ((event.clientY - rect.top) / rect.height) * 100;
-        const img = el.querySelector("img");
-        if (img) {
-            img.style.transformOrigin = `${x}% ${y}%`;
-            img.style.transform = "scale(2)";
-        }
+    const img = el.querySelector("img");
+    if (!img) return;
+
+    const isZoomed = el.classList.toggle("zoomed");
+
+    if (isZoomed) {
+        // Zoom in toward the point under the cursor
+        setZoomOrigin(img, el, event);
+        img.style.transform = "scale(2.2)";
     } else {
-        const img = el.querySelector("img");
-        if (img) img.style.transform = "scale(1)";
+        // Zoom out — reset to center
+        img.style.transform = "scale(1)";
+        img.style.transformOrigin = "center center";
     }
 }
+
+function setZoomOrigin(img, container, event) {
+    const rect = container.getBoundingClientRect();
+    let x = ((event.clientX - rect.left) / rect.width) * 100;
+    let y = ((event.clientY - rect.top)  / rect.height) * 100;
+
+    // Clamp so the origin stays inside the image
+    x = Math.max(0, Math.min(100, x));
+    y = Math.max(0, Math.min(100, y));
+
+    img.style.transformOrigin = `${x}% ${y}%`;
+}
+
+// Attach once per gallery
+document.addEventListener("DOMContentLoaded", function () {
+    const galleryMain = document.getElementById("galleryMain");
+    if (!galleryMain) return;
+    const img = galleryMain.querySelector("img");
+
+    // While zoomed, follow the cursor
+    galleryMain.addEventListener("mousemove", function (e) {
+        if (!galleryMain.classList.contains("zoomed") || !img) return;
+        setZoomOrigin(img, galleryMain, e);
+    });
+
+    // Optional: unzoom when the cursor leaves the image
+    galleryMain.addEventListener("mouseleave", function () {
+        if (!galleryMain.classList.contains("zoomed") || !img) return;
+        galleryMain.classList.remove("zoomed");
+        img.style.transform = "scale(1)";
+        img.style.transformOrigin = "center center";
+    });
+});
 
 function toggleAccordion(head) {
     const body = head.nextElementSibling;
@@ -1371,29 +1425,221 @@ function showToast(message, type) {
     setTimeout(() => { toast.className = "toast"; }, 2500);
 }
 
+
 function toggleWishlist(button, slug) {
     const form = document.getElementById("wishlistForm");
-    if (!form) return;
+
+    if (!form) {
+        console.error("wishlistForm not found");
+        return;
+    }
+
+    const sizeInput = document.getElementById("sizeInput");
+    const colorInput = document.getElementById("colorInput");
+    const variantIdInput = document.getElementById("variantId");
+
+    const wishlistSize = document.getElementById("wishlistSize");
+    const wishlistColor = document.getElementById("wishlistColor");
+    const wishlistVariant = document.getElementById("wishlistVariant");
+
+    const selectedSize = sizeInput ? sizeInput.value.trim() : "";
+    const selectedColor = colorInput ? colorInput.value.trim() : "";
+    const selectedVariantId = variantIdInput
+        ? variantIdInput.value.trim()
+        : "";
+
+    const isCurrentlyWishlisted =
+        button.classList.contains("wishlisted");
+
+    /*
+     * ADDING:
+     * We need a valid variant.
+     */
+    if (!isCurrentlyWishlisted) {
+
+        if (!selectedSize) {
+            showToast("Please select a size.", "error");
+            return;
+        }
+
+        const colorButtons =
+            document.querySelectorAll(".color-btn");
+
+        if (colorButtons.length > 0 && !selectedColor) {
+            showToast("Please select a color.", "error");
+            return;
+        }
+
+        if (!selectedVariantId) {
+            showToast(
+                "Please select a valid size and color combination.",
+                "error"
+            );
+            return;
+        }
+    }
+
+    /*
+     * Copy selected variant into wishlist form.
+     */
+    if (wishlistSize) {
+        wishlistSize.value = selectedSize;
+    }
+
+    if (wishlistColor) {
+        wishlistColor.value = selectedColor;
+    }
+
+    if (wishlistVariant) {
+        wishlistVariant.value = selectedVariantId;
+    }
+
+    const csrfToken =
+        form.querySelector('[name="csrfmiddlewaretoken"]');
+
+    if (!csrfToken) {
+        showToast(
+            "Security token missing. Refresh the page.",
+            "error"
+        );
+        return;
+    }
+
+    /*
+     * Prevent double click.
+     */
+    button.disabled = true;
 
     fetch(form.action, {
         method: "POST",
+
         headers: {
             "X-Requested-With": "XMLHttpRequest",
-            "X-CSRFToken": form.querySelector('[name=csrfmiddlewaretoken]').value
+            "X-CSRFToken": csrfToken.value,
+            "Accept": "application/json"
         },
+
         body: new FormData(form)
     })
-    .then(res => res.json())
-    .then(data => {
-        const isWishlisted = !!(data && data.in_wishlist);
-        button.classList.toggle("wishlisted", isWishlisted);
-        const svg = button.querySelector("svg");
-        if (svg) svg.setAttribute("fill", isWishlisted ? "var(--terra)" : "none");
-        showToast(isWishlisted ? "Added to wishlist" : "Removed from wishlist", "success");
+    .then(async response => {
+
+        const text = await response.text();
+
+        console.log("Wishlist response:", text);
+
+        let data;
+
+        try {
+            data = JSON.parse(text);
+        } catch (error) {
+            console.error(
+                "Wishlist returned non-JSON:",
+                text
+            );
+
+            throw new Error(
+                "Invalid server response"
+            );
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Wishlist request failed"
+            );
+        }
+
+        return data;
     })
-    .catch(() => {
-        showToast("Could not update wishlist", "error");
+    .then(data => {
+
+        console.log("Wishlist data:", data);
+
+        if (data.success === false) {
+            showToast(
+                data.error || "Could not update wishlist.",
+                "error"
+            );
+            return;
+        }
+
+        /*
+         * Backend should return one of these.
+         */
+        const isWishlisted = Boolean(
+            data.in_wishlist ??
+            data.wishlisted ??
+            data.added
+        );
+
+        /*
+         * Update heart.
+         */
+        button.classList.toggle(
+            "wishlisted",
+            isWishlisted
+        );
+
+        /*
+         * Keep data attribute synchronized.
+         */
+        button.dataset.wishlisted =
+            isWishlisted ? "true" : "false";
+
+        /*
+         * Update SVG.
+         */
+        const svg = button.querySelector("svg");
+
+        if (svg) {
+            svg.setAttribute(
+                "fill",
+                isWishlisted
+                    ? "var(--terra)"
+                    : "none"
+            );
+        }
+
+        /*
+         * Toast.
+         */
+        showToast(
+            isWishlisted
+                ? "Added to wishlist"
+                : "Removed from wishlist",
+            "success"
+        );
+
+        /*
+         * Update navbar wishlist count.
+         */
+        if (
+            typeof window.triggerWishlistUpdate ===
+            "function"
+        ) {
+            window.triggerWishlistUpdate();
+        } else {
+            document.dispatchEvent(
+                new CustomEvent("wishlistUpdated")
+            );
+        }
+    })
+    .catch(error => {
+
+        console.error(
+            "Wishlist error:",
+            error
+        );
+
+        showToast(
+            "Could not update wishlist.",
+            "error"
+        );
+    })
+    .finally(() => {
+
+        button.disabled = false;
     });
 }
+
 </script>
 {% endblock %}

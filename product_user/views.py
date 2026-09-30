@@ -87,11 +87,13 @@ def _wishlist_ids(request):
         if not wl:
             return []
         
-        wishlist_items = wl.items.all()  
-        wishlist_ids = [str(item.product.uuid) for item in wishlist_items]
-        
-        return wishlist_ids
-    except Exception as e:
+        return [
+            str(item.variant.product.uuid)
+            for item in wl.items.select_related('variant__product')
+            if item.variant and item.variant.product
+        ]
+    
+    except Exception:
         return []
 
 
@@ -357,10 +359,11 @@ def product_detail(request, slug):
         .prefetch_related('variants', 'variants__images')[:6]
     )
     wl          = _get_wishlist(request)
-    in_wishlist = (
-        wl.items.filter(product_id=product.id).exists()
-        if wl else False
-    )
+    in_wishlist = False
+    if wl:
+       in_wishlist = wl.items.filter(product=product).exists()
+        
+    
     category_display = product.category.name
 
     return render(request, 'product_detail.html', {
