@@ -47,7 +47,7 @@ def _wishlist_ids(request):
 
 @require_POST
 def wishlist_toggle(request, slug):
-    
+
     if not request.user.is_authenticated:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -55,77 +55,98 @@ def wishlist_toggle(request, slug):
                 'error': 'Please login first',
                 'redirect_url': '/login/?next=' + request.path
             }, status=401)
-        messages.info(request, 'Please log in to save items to your wishlist.')
+
+        messages.info(
+            request,
+            'Please log in to save items to your wishlist.'
+        )
         return redirect('login')
 
-    product = get_object_or_404(Product, slug=slug, is_active=True)
-    wl, _ = Wishlist.objects.get_or_create(user=request.user)
+    product = get_object_or_404(
+        Product,
+        slug=slug,
+        is_active=True
+    )
 
-    try:
-        data = json.loads(request.body or '{}')
-    except json.JSONDecodeError:
-        data = {}
+    wl, _ = Wishlist.objects.get_or_create(
+        user=request.user
+    )
 
-    selected_size = data.get('size') or None
-    selected_color = data.get('color') or None
+    selected_size = request.POST.get('size') or None
+    selected_color = request.POST.get('color') or None
 
     color_variants_exist = product.variants.filter(
         color__isnull=False
-    ).exclude(color='').exists()
-
+    ).exclude(
+        color=''
+    ).exists()
     if product.variants.exists():
-        if not selected_size or (color_variants_exist and not selected_color):
+
+        if not selected_size:
             return JsonResponse({
                 'success': False,
-                'error': 'Please select a valid size and color combination before saving.',
+                'error': 'Please select a size.'
             }, status=400)
 
-        if not ProductVariant.objects.filter(
-            product=product,
-            size=selected_size,
-            color=selected_color
-        ).exists():
+        if color_variants_exist and not selected_color:
             return JsonResponse({
                 'success': False,
-                'error': 'The selected color and size combination is not available.',
+                'error': 'Please select a color.'
+            }, status=400)
+
+        variant_query = ProductVariant.objects.filter(
+            product=product,
+            size=selected_size
+        )
+
+        if color_variants_exist:
+            variant_query = variant_query.filter(
+                color=selected_color
+            )
+
+        if not variant_query.exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'The selected color and size combination is not available.'
             }, status=400)
 
     existing = WishlistProduct.objects.filter(
-        wishlist=wl, 
-        product=product, 
+        wishlist=wl,
+        product=product,
         selected_size=selected_size,
         color=selected_color
     ).first()
 
     if existing:
+
         existing.delete()
+
         is_wishlisted = False
         message = f'"{product.name}" removed from wishlist.'
+
     else:
+
         WishlistProduct.objects.create(
-            wishlist=wl, 
-            product=product, 
+            wishlist=wl,
+            product=product,
             selected_size=selected_size,
             color=selected_color
         )
+
         is_wishlisted = True
         message = f'"{product.name}" saved to wishlist!'
 
     wishlist_count = wl.items.count()
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': True,
-            'is_wishlisted': is_wishlisted,
-            'wishlist_count': wishlist_count,
-            'message': message,
-            'product_uuid': str(product.uuid), 
-            'product_slug': product.slug,
-        })
-
-    messages.success(request, message) if is_wishlisted else messages.info(request, message)
-    next_url = request.POST.get('next', 'wishlist_detail')
-    return redirect(next_url)
+    return JsonResponse({
+        'success': True,
+        'is_wishlisted': is_wishlisted,
+        'in_wishlist': is_wishlisted,
+        'wishlist_count': wishlist_count,
+        'message': message,
+        'size':selected_size,
+        'color':selected_color,
+    })
 
 
 @login_required(login_url='login')

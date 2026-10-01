@@ -12,7 +12,7 @@ from decimal import Decimal, InvalidOperation
 from product_admin.models import Product, ProductReview, ProductVariant,ProductImage
 from cart_user.models import CartItem
 from cart_user.cart_helpers import get_cart, cart_count_payload, wants_json
-from wishlist_user.models import Wishlist
+from wishlist_user.models import Wishlist, WishlistProduct
 from category_admin.models import Category
 
 ITEMS_PER_PAGE   = 8
@@ -81,18 +81,18 @@ def _get_wishlist(request):
 def _wishlist_ids(request):
     if not request.user.is_authenticated:
         return []
-    
+
     try:
         wl = _get_wishlist(request)
         if not wl:
             return []
-        
+
         return [
-            str(item.variant.product.uuid)
-            for item in wl.items.select_related('variant__product')
-            if item.variant and item.variant.product
+            str(item.product.uuid)
+            for item in wl.items.select_related('product')
+            if item.product
         ]
-    
+
     except Exception:
         return []
 
@@ -181,6 +181,20 @@ def product_shop(request):
             setattr(product, 'offer_discount', Decimal('0'))
             setattr(product, 'offer_price', product.min_price)
 
+    wishlist_variants = []
+    if request.user.is_authenticated:
+        wishlist_variants = [
+            {
+                'product_uuid': str(item['product__uuid']),
+                'size': item['selected_size'] or '',
+                'color': item['color'] or '',
+            }
+            for item in WishlistProduct.objects.filter(
+                wishlist__user=request.user,
+                product__in=page_obj.object_list,
+            ).values('product__uuid', 'selected_size', 'color')
+        ]
+
     current = page_obj.number
     num_pages = paginator.num_pages
     visible = set()
@@ -234,6 +248,7 @@ def product_shop(request):
         'global_price_min': global_price_min,
         'global_price_max': global_price_max,
         'wishlist_ids': _wishlist_ids(request),  
+        'wishlist_variants': wishlist_variants,
     })
 
 

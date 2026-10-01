@@ -153,31 +153,53 @@ a{text-decoration:none;color:inherit}
 .card-badges{position:absolute;top:12px;left:12px;display:flex;flex-direction:column;gap:5px;z-index:1}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase}
 .badge-oos{background:rgba(30,26,23,.7);color:#fff;backdrop-filter:blur(4px)}
-
-.card-wishlist{
-    position:absolute;
-    top:12px;
-    right:12px;
-    z-index:10;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    background:rgba(255,255,255,.85);
-    backdrop-filter:blur(6px);
-    border:1px solid var(--border);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    transition:var(--transition);
-    opacity:1;
+.card-wishlist {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #e0d9d0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 0;
 }
-.product-card:hover .card-wishlist{opacity:1}
-.card-wishlist:hover{background:#fff;border-color:var(--terra);transform:scale(1.1)}
-.card-wishlist svg{width:14px;height:14px}
-.card-wishlist.wishlisted{background:#fff0f0;border-color:var(--terra)}
-.card-wishlist:disabled{opacity:0.5;cursor:not-allowed}
 
+.card-wishlist:hover {
+    border-color: var(--terra);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(181, 103, 58, 0.15);
+}
+
+.card-wishlist svg {
+    width: 18px;
+    height: 18px;
+    transition: all 0.2s ease;
+}
+
+.card-wishlist:not(.wishlisted) svg path {
+  fill: none;
+  stroke: var(--terra);
+  stroke-width: 2;
+}
+
+.card-wishlist.wishlisted svg path {
+    fill: var(--terra);
+    stroke: var(--terra);
+    stroke-width: 2;
+}
+
+.card-wishlist:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 .card-body{padding:14px 14px 16px}
 .card-cat{font-size:15px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--terra);margin-bottom:5px}
 .card-name{
@@ -221,6 +243,28 @@ a{text-decoration:none;color:inherit}
   letter-spacing:.5px;
   text-transform:uppercase;
 }
+
+.toast-msg {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+}
+.toast-msg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast-msg.success { background: #3a7d5a; }
+.toast-msg.error   { background: #b53333; }
+.toast-msg.info    { background: #1e1a17; }
 /* ── COLOR SELECTION ── */
 .card-colors{margin-bottom:8px}
 .color-label{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px}
@@ -515,46 +559,54 @@ a{text-decoration:none;color:inherit}
           <article class="product-card {% if product.total_stock == 0 %}oos{% endif %}" 
                    data-product-id="{{ product.uuid }}" 
                    data-product-name="{{ product.name|escapejs }}">
-
-            <a href="{% url 'product_detail' product.slug %}">
               <div class="card-img">
-                 {% with img=product.variants.first.images.first %}
-                  {% if img %}
-                    <img src="{{ img.image.url }}" alt="{{ product.name }}" loading="lazy">
-                  {% else %}
-                    <div class="card-no-img">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
-                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                      No image
-                    </div>
-                  {% endif %}
-                {% endwith %}
-                <div class="card-badges">
-                  {% if product.total_stock == 0 %}
-                    <span class="badge badge-oos">Out of Stock</span>
-                  {% endif %}
-                </div>
-              </div>
-            </a>
 
-            <!-- Wishlist Button -->
-                    <button
-                        type="button"
-                        class="card-wishlist {% if product.uuid|stringformat:'s' in wishlist_ids %}wishlisted{% endif %}"
-                        data-slug="{{ product.slug }}"
-                        data-wishlist-url="{% url 'wishlist_toggle' product.slug %}"
-                        onclick="toggleWishlistShop(this)">                
-                     <svg width="14" height="14" 
-                     fill="{% if product.uuid|stringformat:'s' in wishlist_ids %}var(--terra){% else %}none{% endif %}"
-                     stroke="var(--terra)" 
-                     stroke-width="2" 
-                     viewBox="0 0 24 24">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-            </button>
+                  <a href="{% url 'product_detail' product.slug %}">
+                      {% with img=product.variants.first.images.first %}
+                          {% if img %}
+                              <img src="{{ img.image.url }}"
+                                  alt="{{ product.name }}"
+                                  loading="lazy">
+                          {% else %}
+                              <div class="card-no-img">
+                                  <svg viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="1.3">
+                                      <rect x="3" y="3" width="18" height="18" rx="3"/>
+                                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                                      <polyline points="21 15 16 10 5 21"/>
+                                  </svg>
+                                  No image
+                              </div>
+                          {% endif %}
+                      {% endwith %}
+                  </a>
+
+                  <!-- Wishlist -->
+                  <button
+                      type="button"
+                      class="card-wishlist"
+                      data-slug="{{ product.slug }}"
+                      data-wishlist-url="{% url 'wishlist_toggle' product.slug %}"
+                      onclick="toggleWishlistShop(this, event);">
+
+                      <svg viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"/>
+                      </svg>
+                  </button>
+
+                  <div class="card-badges">
+                      {% if product.total_stock == 0 %}
+                          <span class="badge badge-oos">Out of Stock</span>
+                      {% endif %}
+                  </div>
+
+              </div>
 
             <div class="card-body">
               <div class="card-cat">{{ product.category }}</div>
@@ -573,7 +625,7 @@ a{text-decoration:none;color:inherit}
 
                 {% ifchanged variant.color %}
                     <button type="button"
-                            class="color-btn {% if variant.color == first_color %}active{% endif %}"
+                            class="color-btn"
                             data-color="{{ variant.color }}"
                             onclick="selectColor(
                                 this,
@@ -740,6 +792,8 @@ a{text-decoration:none;color:inherit}
   </div>
 </div>
 
+{{ wishlist_variants|json_script:"wishlist-variants-data" }}
+
 <!-- Size Selection Modal -->
 <div id="sizeModal" class="modal">
   <div class="modal-content">
@@ -764,9 +818,11 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script>
-// ============================================
-// MODAL FUNCTIONALITY
-// ============================================
+
+const wishlistVariants = JSON.parse(
+  document.getElementById('wishlist-variants-data').textContent
+);
+
 const modal = document.getElementById('sizeModal');
 const modalProductName = document.getElementById('modalProductName');
 const modalSizesContainer = document.getElementById('modalSizes');
@@ -915,7 +971,15 @@ function clearSearch() {
 // ============================================
 // WISHLIST FUNCTIONS
 // ============================================
-function toggleWishlistShop(button) {
+
+function toggleWishlistShop(button, event) {
+    const evt = event || window.event;
+
+    if (evt) {
+        evt.preventDefault();
+        evt.stopPropagation();
+    }
+
     const card = button.closest('.product-card');
 
     if (!card) {
@@ -942,28 +1006,19 @@ function toggleWishlistShop(button) {
     const selectedColor = colorButton.dataset.color;
     const selectedSize = sizeButton.dataset.size;
 
-    console.log('Wishlist color:', selectedColor);
-    console.log('Wishlist size:', selectedSize);
-
     const csrfInput = document.querySelector(
         '[name=csrfmiddlewaretoken]'
     );
 
     if (!csrfInput) {
-        showToastMessage(
-            'Please login to use the wishlist.',
-            'error'
-        );
+        showToastMessage('Please login first.', 'error');
         return;
     }
 
     const url = button.dataset.wishlistUrl;
 
     if (!url) {
-        showToastMessage(
-            'Wishlist URL is missing.',
-            'error'
-        );
+        showToastMessage('Wishlist URL is missing.', 'error');
         return;
     }
 
@@ -971,20 +1026,22 @@ function toggleWishlistShop(button) {
 
     button.disabled = true;
 
+    const formData = new FormData();
+
+    formData.append('size', selectedSize);
+    formData.append('color', selectedColor);
+
     fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': csrfInput.value,
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin',
-        body: JSON.stringify({
-            size: selectedSize,
-            color: selectedColor
-        })
+        body: formData
     })
     .then(async response => {
+
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
@@ -998,6 +1055,7 @@ function toggleWishlistShop(button) {
         return data;
     })
     .then(data => {
+
         if (!data.success) {
             throw new Error(
                 data.error ||
@@ -1006,62 +1064,74 @@ function toggleWishlistShop(button) {
             );
         }
 
-        const isWishlisted = Boolean(data.is_wishlisted);
-
+        // IMPORTANT:
+        // Update heart based on server result
         button.classList.toggle(
-            'wishlisted',
-            isWishlisted
+          'wishlisted',
+          Boolean(data.is_wishlisted)
         );
 
-        const svg = button.querySelector('svg');
+        // Store current combination on the button
+        button.dataset.selectedColor = selectedColor;
+        button.dataset.selectedSize = selectedSize;
 
-        if (svg) {
-            svg.setAttribute(
-                'fill',
-                isWishlisted ? 'var(--terra)' : 'none'
-            );
+        const existingIndex = wishlistVariants.findIndex(item =>
+          item.product_uuid === card.dataset.productId &&
+          item.color === selectedColor &&
+          item.size === selectedSize
+        );
+        if (data.is_wishlisted && existingIndex === -1) {
+          wishlistVariants.push({
+            product_uuid: card.dataset.productId,
+            color: selectedColor,
+            size: selectedSize
+          });
+        } else if (!data.is_wishlisted && existingIndex !== -1) {
+          wishlistVariants.splice(existingIndex, 1);
         }
+        updateWishlistHeart(card);
 
-        if (data.wishlist_count !== undefined) {
-            const countElement =
-                document.getElementById('wishlistCount');
+        // Wishlist count
+        const countElement =
+            document.getElementById('wishlistCount');
 
-            if (countElement) {
-                const count = Number(data.wishlist_count) || 0;
+        if (
+            countElement &&
+            data.wishlist_count !== undefined
+        ) {
+            const count = Number(data.wishlist_count) || 0;
 
-                countElement.textContent = count;
+            countElement.textContent = count;
 
-                countElement.style.display =
-                    count > 0 ? 'inline-flex' : 'none';
-            }
+            countElement.style.display =
+                count > 0 ? 'inline-flex' : 'none';
+
+            countElement.classList.add('bump');
+
+            setTimeout(() => {
+                countElement.classList.remove('bump');
+            }, 300);
         }
 
         showToastMessage(
             data.message ||
             (
-                isWishlisted
+                data.is_wishlisted
                     ? 'Added to wishlist!'
                     : 'Removed from wishlist!'
             ),
-            isWishlisted ? 'success' : 'info'
+            data.is_wishlisted ? 'success' : 'info'
         );
     })
     .catch(error => {
+
         console.error('Wishlist error:', error);
 
+        // Restore previous state
         button.classList.toggle(
             'wishlisted',
             oldState
         );
-
-        const svg = button.querySelector('svg');
-
-        if (svg) {
-            svg.setAttribute(
-                'fill',
-                oldState ? 'var(--terra)' : 'none'
-            );
-        }
 
         showToastMessage(
             error.message ||
@@ -1077,6 +1147,7 @@ function toggleWishlistShop(button) {
 // COLOR AND SIZE SELECTION FUNCTIONS
 // ============================================
 function selectColor(button, productUuid, color) {
+
     const card = button.closest('.product-card');
 
     if (!card) return;
@@ -1087,7 +1158,10 @@ function selectColor(button, productUuid, color) {
 
     button.classList.add('active');
 
-    card.querySelectorAll('.size-badge').forEach(sizeBadge => {
+    const sizeBadges = card.querySelectorAll('.size-badge');
+
+    sizeBadges.forEach(sizeBadge => {
+
         sizeBadge.classList.remove('selected-size');
 
         if (sizeBadge.dataset.color === color) {
@@ -1096,7 +1170,6 @@ function selectColor(button, productUuid, color) {
             sizeBadge.style.display = 'none';
         }
     });
-}
 
     const firstAvailableSize = [...sizeBadges].find(size =>
         size.dataset.color === color &&
@@ -1104,6 +1177,7 @@ function selectColor(button, productUuid, color) {
     );
 
     if (firstAvailableSize) {
+
         selectSize(
             firstAvailableSize,
             productUuid,
@@ -1111,7 +1185,33 @@ function selectColor(button, productUuid, color) {
             firstAvailableSize.dataset.price
         );
     }
-    
+
+    updateWishlistHeart(card);
+}
+
+  function updateWishlistHeart(card) {
+    const button = card.querySelector('.card-wishlist');
+    const colorButton = card.querySelector('.color-btn.active');
+    const sizeButton = card.querySelector('.size-badge.selected-size');
+
+    if (!button || !colorButton || !sizeButton) {
+      button?.classList.remove('wishlisted');
+      return;
+    }
+
+    const selectedColor = colorButton.dataset.color || '';
+    const selectedSize = sizeButton.dataset.size || '';
+    const isWishlisted = wishlistVariants.some(item =>
+      item.product_uuid === card.dataset.productId &&
+      item.color === selectedColor &&
+      item.size === selectedSize
+    );
+
+    button.classList.toggle('wishlisted', isWishlisted);
+    button.dataset.selectedColor = selectedColor;
+    button.dataset.selectedSize = selectedSize;
+  }
+
 function selectSize(element, productUuid, size, price) {
     const parent = element.closest('.card-sizes');
     parent.querySelectorAll('.size-badge').forEach(el => el.classList.remove('selected-size'));
@@ -1142,26 +1242,27 @@ function selectSize(element, productUuid, size, price) {
         addToCartBtn.disabled = false;
         addToCartBtn.textContent = 'Add to Cart';
     }
+
+    updateWishlistHeart(element.closest('.product-card'));
 }
 
 function addToCart(productUuid, btnEl) {
     const url = btnEl.dataset.addUrl;
     const productCard = btnEl.closest('.product-card');
-    const selectedSize = productCard.querySelector('.size-badge.selected-size');
+    const selectedSizeEl = productCard.querySelector('.size-badge.selected-size');
 
-    if (!selectedSize) {
+    if (!selectedSizeEl) {
         showToastMessage('Please select a size first!', 'error');
         return;
     }
 
-    const size = selectedSize.dataset.size;
+    const size = selectedSizeEl.dataset.size;
 
-    // ── NEW: capture the active color ──
     const activeColorBtn = productCard.querySelector('.color-btn.active');
     const color = activeColorBtn ? activeColorBtn.dataset.color : null;
 
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (!csrfToken) {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfInput) {
         window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
         return;
     }
@@ -1170,19 +1271,18 @@ function addToCart(productUuid, btnEl) {
     btnEl.textContent = 'Adding...';
     btnEl.disabled = true;
 
-    const formData = new FormData();
-    formData.append('size', size);
-    if (color) formData.append('color', color);   // ← NEW
-    formData.append('quantity', 1);
-
     fetch(url, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken.value,
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfInput.value,
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin',
-        body: formData
+        body: JSON.stringify({
+            size: size,
+            color: color
+        })
     })
     .then(response => response.json())
     .then(data => {
@@ -1217,84 +1317,49 @@ function showToastMessage(message, type) {
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'customToast';
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: #1e1a17;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 10000;
-            opacity: 0;
-            transition: all 0.3s ease;
-            pointer-events: none;
-            white-space: nowrap;
-            font-family: 'DM Sans', sans-serif;
-        `;
+        toast.className = 'toast-msg';
         document.body.appendChild(toast);
     }
-
-    if (type === 'success') {
-        toast.style.background = '#3a7d5a';
-    } else if (type === 'error') {
-        toast.style.background = '#b53333';
-    } else {
-        toast.style.background = '#1e1a17';
-    }
-
+    toast.className = 'toast-msg ' + (type || 'info');
     toast.textContent = message;
-
-    setTimeout(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateX(-50%) translateY(0)';
-    }, 10);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(-50%) translateY(20px)';
-    }, 3000);
+    void toast.offsetWidth; // force reflow so transition plays
+    toast.classList.add('show');
+    clearTimeout(toast.hideTimer);
+    toast.hideTimer = setTimeout(() => toast.classList.remove('show'), 3000);
 }
-
 // ============================================
 // INITIALIZATION
 // ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize filter blocks
-    document.querySelectorAll('.filter-block-head.open').forEach(head => {
-        const body = head.nextElementSibling;
-        if (body) body.style.display = '';
-    });
-
-    // Initialize wishlist buttons
-    document.querySelectorAll('.card-wishlist').forEach(button => {
-        const isWishlisted = button.classList.contains('wishlisted');
-        const svg = button.querySelector('svg');
-        if (isWishlisted) {
-            svg.setAttribute('fill', 'var(--terra)');
-        } else {
-            svg.setAttribute('fill', 'none');
-        }
-    });
-
-    // Auto-select first color and size
+document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.product-card').forEach(card => {
-        const firstColorBtn = card.querySelector('.color-btn');
-        if (firstColorBtn) {
-            const productUuid = card.dataset.productId;
-            const color = firstColorBtn.dataset.color;
-            setTimeout(() => {
-                selectColor(firstColorBtn, productUuid, color);
-            }, 100);
-        } else {
-            const firstSize = card.querySelector('.size-badge:not(.out-of-stock)');
-            if (firstSize) {
-                const productUuid = card.dataset.productId;
-                setTimeout(() => {
-                    selectSize(firstSize, productUuid, firstSize.dataset.size, firstSize.dataset.price);
-                }, 100);
+        const colorButtons = card.querySelectorAll('.color-btn');
+        const sizeBadges = card.querySelectorAll('.size-badge');
+
+        if (!colorButtons.length) return;
+
+        let activeColorBtn = card.querySelector('.color-btn.active');
+
+        if (!activeColorBtn) {
+            activeColorBtn = colorButtons[0];
+        }
+
+        selectColor(
+            activeColorBtn,
+            card.dataset.productId,
+            activeColorBtn.dataset.color
+        );
+
+        const color = activeColorBtn.dataset.color;
+
+        let activeSizeBtn = card.querySelector('.size-badge.selected-size');
+
+        if (!activeSizeBtn) {
+            activeSizeBtn = [...sizeBadges].find(el =>
+                el.dataset.color === color && Number(el.dataset.stock) > 0
+            );
+
+            if (activeSizeBtn) {
+                activeSizeBtn.classList.add('selected-size');
             }
         }
     });
