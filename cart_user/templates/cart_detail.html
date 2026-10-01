@@ -234,7 +234,13 @@ button,input{font-family:var(--body)}
               </div>
               <form method="POST" action="{% url 'cart_remove' item.id %}">
                 {% csrf_token %}
-                <button type="submit" class="btn-remove" title="Remove">
+                <button
+                  type="button"
+                  class="btn-remove"
+                  data-item-id="{{ item.id }}"
+                  data-url="{% url 'cart_update' item.id %}"
+                  data-action="remove"
+                  title="Remove">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </form>
@@ -282,9 +288,26 @@ button,input{font-family:var(--body)}
               {% endif %}
 
                   <div class="qty-wrap">
-                      <button type="button" class="qty-btn" data-item-id="{{ item.id }}" data-action="decrease" {% if item.quantity <= 1 %}disabled{% endif %}>−</button>
+                      <button
+                          type="button"
+                          class="qty-btn"
+                          data-item-id="{{ item.id }}"
+                          data-url="{% url 'cart_update' item.id %}"
+                          data-action="decrease"
+                          {% if item.quantity <= 1 %}disabled{% endif %}>
+                          −
+                      </button>
+
                       <span class="qty-num" id="qty-{{ item.id }}">{{ item.quantity }}</span>
-                      <button type="button" class="qty-btn" data-item-id="{{ item.id }}" data-action="increase">+</button>
+
+                      <button
+                          type="button"
+                          class="qty-btn"
+                          data-item-id="{{ item.id }}"
+                          data-url="{% url 'cart_update' item.id %}"
+                          data-action="increase">
+                          +
+                      </button>
                   </div>
             </div>
 
@@ -312,11 +335,17 @@ button,input{font-family:var(--body)}
                   {% endif %}
               </div>
          
-            <button type="button" class="btn-remove" data-item-id="{{ item.id }}" data-action="remove" title="Remove">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
+              <button
+                  type="button"
+                  class="btn-remove"
+                  data-item-id="{{ item.id }}"
+                  data-url="{% url 'cart_update' item.id %}"
+                  data-action="remove"
+                  title="Remove">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+              </button>
 
           </div>
           {% endfor %}
@@ -325,7 +354,7 @@ button,input{font-family:var(--body)}
             <form method="POST" action="{% url 'cart_clear' %}">
               {% csrf_token %}
               <button type="submit" class="btn-clear"
-                      onclick="return confirm('Remove all items from your cart?')">
+                      data-url="{% url 'cart_clear' %}"  onclick="return confirm('Remove all items from your cart?')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
                   <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
@@ -486,66 +515,49 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function removeCartItemViaForm(form, formData, itemId) {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-    const url = form.action;
-    
-    const itemRow = form.closest('.item-row');
-    if (itemRow) {
-        itemRow.style.opacity = '0.5';
-        itemRow.style.pointerEvents = 'none';
-    }
-    
-    fetch(url, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': csrfToken ? csrfToken.value : ''
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data && data.success) {
-            handleSuccessfulRemoval(itemRow, data);
-        } else if (data && data.error) {
-            showToast(data.error, 'error');
-            if (itemRow) {
-                itemRow.style.opacity = '1';
-                itemRow.style.pointerEvents = 'auto';
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Error removing item', 'error');
-        if (itemRow) {
-            itemRow.style.opacity = '1';
-            itemRow.style.pointerEvents = 'auto';
-        }
-    });
-}
-
 function removeCartItem(itemId) {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+
+    const csrfToken =
+        document.querySelector('[name=csrfmiddlewaretoken]');
+
     if (!csrfToken) {
-        console.error('CSRF token not found');
         showToast('Authentication error', 'error');
         return;
     }
-    
-    const url = `/cart_user/cart/update/${itemId}/`;
+
+    const button = document.querySelector(
+        `.btn-remove[data-item-id="${itemId}"][data-action="remove"]`
+    );
+
+    if (!button) {
+        console.error('Remove button not found:', itemId);
+        showToast('Remove button not found', 'error');
+        return;
+    }
+
+    // Use Django-generated URL
+    const url = button.dataset.url;
+
+    if (!url) {
+        console.error('Remove URL missing');
+        showToast('Remove URL is missing', 'error');
+        return;
+    }
+
+    console.log('Remove URL:', url);
+
     const formData = new FormData();
+
     formData.append('action', 'remove');
-    
-    // Show loading state on the item row
-    const itemRow = document.querySelector(`.btn-remove[data-item-id="${itemId}"]`).closest('.item-row');
+
+    const itemRow =
+        button.closest('.item-row');
+
     if (itemRow) {
         itemRow.style.opacity = '0.5';
         itemRow.style.pointerEvents = 'none';
     }
-    
+
     fetch(url, {
         method: 'POST',
         body: formData,
@@ -555,27 +567,78 @@ function removeCartItem(itemId) {
         },
         credentials: 'same-origin'
     })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-            return;
+
+    .then(async response => {
+
+        console.log(
+            'Remove HTTP status:',
+            response.status
+        );
+
+        const contentType =
+            response.headers.get('content-type') || '';
+
+        if (!contentType.includes('application/json')) {
+
+            const text = await response.text();
+
+            console.error(
+                'Remove server response:',
+                text
+            );
+
+            throw new Error(
+                `Server returned ${response.status} instead of JSON`
+            );
         }
-        return response.json();
+
+        const data = await response.json();
+
+        console.log(
+            'Remove response:',
+            data
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                `Request failed (${response.status})`
+            );
+        }
+
+        return data;
     })
+
     .then(data => {
-        if (data && data.success) {
-            handleSuccessfulRemoval(itemRow, data);
-        } else if (data && data.error) {
-            showToast(data.error, 'error');
-            if (itemRow) {
-                itemRow.style.opacity = '1';
-                itemRow.style.pointerEvents = 'auto';
-            }
+
+        if (!data.success) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                'Unable to remove item'
+            );
         }
+
+        handleSuccessfulRemoval(
+            itemRow,
+            data
+        );
     })
+
     .catch(error => {
-        console.error('Error removing item:', error);
-        showToast('Error removing item from cart', 'error');
+
+        console.error(
+            'Error removing item:',
+            error
+        );
+
+        showToast(
+            error.message ||
+            'Error removing item from cart',
+            'error'
+        );
+
         if (itemRow) {
             itemRow.style.opacity = '1';
             itemRow.style.pointerEvents = 'auto';
@@ -747,32 +810,68 @@ function updateMinusButtonState(itemId, newQuantity) {
 }
 
 function updateCartItem(itemId, action, quantity = null) {
+
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+
     if (!csrfToken) {
         console.error('CSRF token not found');
         showToast('Authentication error', 'error');
         return;
     }
-    
-    const url = `/cart_user/cart/update/${itemId}/`;
+
+    const button = document.querySelector(
+        `.qty-btn[data-item-id="${itemId}"][data-action="${action}"]`
+    );
+
+    if (!button) {
+        console.error('Quantity button not found:', itemId, action);
+        showToast('Quantity button not found', 'error');
+        return;
+    }
+
+    // IMPORTANT: use Django-generated URL
+    const url = button.dataset.url;
+
+    if (!url) {
+        console.error('Cart update URL missing');
+        showToast('Cart update URL is missing', 'error');
+        return;
+    }
+
+    console.log('Cart update URL:', url);
+    console.log('Action:', action);
+    console.log('Item ID:', itemId);
+
     const formData = new FormData();
     formData.append('action', action);
+
     if (quantity !== null) {
         formData.append('quantity', quantity);
     }
-    
+
     const qtySpan = document.getElementById(`qty-${itemId}`);
-    const decreaseBtn = document.querySelector(`.qty-btn[data-item-id="${itemId}"][data-action="decrease"]`);
-    const increaseBtn = document.querySelector(`.qty-btn[data-item-id="${itemId}"][data-action="increase"]`);
-    
-    // Show loading state
+
+    const decreaseBtn = document.querySelector(
+        `.qty-btn[data-item-id="${itemId}"][data-action="decrease"]`
+    );
+
+    const increaseBtn = document.querySelector(
+        `.qty-btn[data-item-id="${itemId}"][data-action="increase"]`
+    );
+
+    // Loading state
     if (qtySpan) {
         qtySpan.style.opacity = '0.5';
-        qtySpan.style.transition = 'opacity 0.2s';
     }
-    if (decreaseBtn) decreaseBtn.disabled = true;
-    if (increaseBtn) increaseBtn.disabled = true;
-    
+
+    if (decreaseBtn) {
+        decreaseBtn.disabled = true;
+    }
+
+    if (increaseBtn) {
+        increaseBtn.disabled = true;
+    }
+
     fetch(url, {
         method: 'POST',
         body: formData,
@@ -782,139 +881,289 @@ function updateCartItem(itemId, action, quantity = null) {
         },
         credentials: 'same-origin'
     })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-            return;
+
+    .then(async response => {
+
+        console.log('HTTP status:', response.status);
+
+        const contentType =
+            response.headers.get('content-type') || '';
+
+        if (!contentType.includes('application/json')) {
+
+            const text = await response.text();
+
+            console.error(
+                'Expected JSON but received:',
+                text
+            );
+
+            throw new Error(
+                `Server returned ${response.status} instead of JSON`
+            );
         }
-        return response.json();
+
+        const data = await response.json();
+
+        console.log('Cart update response:', data);
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                `Request failed (${response.status})`
+            );
+        }
+
+        return data;
     })
+
     .then(data => {
-        // Re-enable buttons
-        if (decreaseBtn) decreaseBtn.disabled = false;
-        if (increaseBtn) increaseBtn.disabled = false;
-        
-        if (data && data.success) {
-            if (qtySpan && data.new_quantity !== undefined) {
-                if (data.new_quantity > 0) {
-                    // Update quantity display
-                    qtySpan.textContent = data.new_quantity;
-                    qtySpan.style.opacity = '1';
-                    updateMinusButtonState(itemId, data.new_quantity);
-                    
-                    // Update item unit display (e.g., "£5000.00 × 2")
-                    const itemRow = qtySpan.closest('.item-row');
-                    if (itemRow) {
-                        const itemUnitEl = itemRow.querySelector('.item-unit');
-                        if (itemUnitEl && data.unit_price !== undefined && data.new_quantity !== undefined) {
-                            itemUnitEl.textContent = `₹${parseFloat(data.unit_price).toFixed(2)} × ${data.new_quantity}`;
-                        }
-                        
-                        // Update item total
-                        const itemTotalEl = itemRow.querySelector('.item-total');
-                        if (itemTotalEl && data.item_total !== undefined) {
-                            itemTotalEl.textContent = `₹${parseFloat(data.item_total).toFixed(2)}`;
-                        }
-                    }
-                    
-                    // Update order summary
-                    if (data.cart_subtotal !== undefined) {
-                        updateOrderSummary(data);
-                    }
-                    
-                    // Update cart count in header
-                    if (data.cart_count !== undefined) {
-                        updateCartCounts(data);
-                    }
-                    
-                    // Update cart card heading
-                    const availableItems = document.querySelectorAll('.item-row:not(.unavailable)').length;
-                    updateCartCardHeading(availableItems);
-                    
-                    if (data.message) showToast(data.message, 'success');
-                    
-                } else {
-                    // Item removed (quantity became 0)
-                    const itemRow = qtySpan.closest('.item-row');
-                    if (itemRow) {
-                        itemRow.style.transition = 'all 0.3s ease';
-                        itemRow.style.opacity = '0';
-                        setTimeout(() => {
-                            itemRow.remove();
-                            const remainingRows = document.querySelectorAll('.item-row:not(.unavailable)').length;
-                            const unavailableRows = document.querySelectorAll('.item-row.unavailable').length;
-                            
-                            // Update cart counts
-                            if (data.cart_count !== undefined) {
-                                updateCartCounts(data);
-                            }
-                            
-                            if (remainingRows === 0 && unavailableRows === 0) {
-                                // Cart is completely empty - reload to show empty state
-                                window.location.reload();
-                            } else {
-                                updateCartCardHeading(remainingRows);
-                                // Update order summary
-                                if (data.cart_subtotal !== undefined) {
-                                    updateOrderSummary(data);
-                                }
-                            }
-                        }, 300);
-                    }
-                    return;
+
+        if (!data.success) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                'Unable to update cart'
+            );
+        }
+
+        const newQuantity = Number(data.new_quantity);
+
+        console.log('New quantity:', newQuantity);
+
+        if (qtySpan && !isNaN(newQuantity)) {
+
+            qtySpan.textContent = newQuantity;
+            qtySpan.style.opacity = '1';
+
+            updateMinusButtonState(
+                itemId,
+                newQuantity
+            );
+
+            const itemRow =
+                qtySpan.closest('.item-row');
+
+            if (itemRow) {
+
+                // Update unit price
+                const itemUnitEl =
+                    itemRow.querySelector('.item-unit');
+
+                if (
+                    itemUnitEl &&
+                    data.unit_price !== undefined
+                ) {
+                    itemUnitEl.textContent =
+                        `₹${parseFloat(data.unit_price).toFixed(2)} × ${newQuantity}`;
+                }
+
+                // Update total
+                const itemTotalEl =
+                    itemRow.querySelector('.item-total');
+
+                if (
+                    itemTotalEl &&
+                    data.item_total !== undefined
+                ) {
+                    itemTotalEl.textContent =
+                        `₹${parseFloat(data.item_total).toFixed(2)}`;
                 }
             }
-        } else if (data && data.error) {
-            showToast(data.error, 'error');
-            if (qtySpan) qtySpan.style.opacity = '1';
+        }
+
+        // Update summary
+        if (
+            data.cart_subtotal !== undefined ||
+            data.grand_total !== undefined
+        ) {
+            updateOrderSummary(data);
+        }
+
+        // Update header count
+        if (data.cart_count !== undefined) {
+            updateCartCounts(data);
+        }
+
+        // Update cart heading
+        const availableItems =
+            document.querySelectorAll(
+                '.item-row:not(.unavailable)'
+            ).length;
+
+        updateCartCardHeading(availableItems);
+
+        showToast(
+            data.message || 'Cart updated successfully',
+            'success'
+        );
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Error updating cart:',
+            error
+        );
+
+        showToast(
+            error.message || 'Error updating cart',
+            'error'
+        );
+
+        if (qtySpan) {
+            qtySpan.style.opacity = '1';
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Error updating cart', 'error');
-        if (qtySpan) qtySpan.style.opacity = '1';
-        if (decreaseBtn) decreaseBtn.disabled = false;
-        if (increaseBtn) increaseBtn.disabled = false;
+
+    .finally(() => {
+
+        // Re-enable buttons
+        if (decreaseBtn) {
+            decreaseBtn.disabled = false;
+        }
+
+        if (increaseBtn) {
+            increaseBtn.disabled = false;
+        }
+
+        // Make minus disabled when quantity = 1
+        if (qtySpan) {
+            updateMinusButtonState(
+                itemId,
+                Number(qtySpan.textContent)
+            );
+        }
     });
 }
 
+
 function clearCart() {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+
+    const csrfToken =
+        document.querySelector('[name=csrfmiddlewaretoken]');
+
+    const clearButton =
+        document.querySelector('.btn-clear');
+
     if (!csrfToken) {
         showToast('Authentication error', 'error');
         return;
     }
-    
-    document.querySelectorAll('.qty-btn, .btn-remove, .btn-clear').forEach(btn => {
+
+    if (!clearButton) {
+        showToast('Clear cart button not found', 'error');
+        return;
+    }
+
+    const url = clearButton.dataset.url;
+
+    if (!url) {
+        console.error('Clear cart URL missing');
+        showToast('Clear cart URL is missing', 'error');
+        return;
+    }
+
+    console.log('Clear cart URL:', url);
+
+    document.querySelectorAll(
+        '.qty-btn, .btn-remove, .btn-clear'
+    ).forEach(btn => {
         btn.disabled = true;
         btn.style.opacity = '0.5';
     });
-    
-    fetch('/cart_user/cart/clear/', {
+
+    fetch(url, {
         method: 'POST',
+
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRFToken': csrfToken.value
         },
+
         credentials: 'same-origin'
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Cart cleared successfully', 'success');
-            setTimeout(() => window.location.reload(), 500);
-        } else {
-            showToast('Error clearing cart', 'error');
-            document.querySelectorAll('.qty-btn, .btn-remove, .btn-clear').forEach(btn => {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-            });
+
+    .then(async response => {
+
+        console.log(
+            'Clear HTTP status:',
+            response.status
+        );
+
+        const contentType =
+            response.headers.get('content-type') || '';
+
+        if (!contentType.includes('application/json')) {
+
+            const text = await response.text();
+
+            console.error(
+                'Clear cart server response:',
+                text
+            );
+
+            throw new Error(
+                `Server returned ${response.status} instead of JSON`
+            );
         }
+
+        const data = await response.json();
+
+        console.log(
+            'Clear cart response:',
+            data
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                `Request failed (${response.status})`
+            );
+        }
+
+        return data;
     })
+
+    .then(data => {
+
+        if (!data.success) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                'Error clearing cart'
+            );
+        }
+
+        showToast(
+            data.message ||
+            'Cart cleared successfully',
+            'success'
+        );
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    })
+
     .catch(error => {
-        console.error('Error:', error);
-        showToast('Error clearing cart', 'error');
-        document.querySelectorAll('.qty-btn, .btn-remove, .btn-clear').forEach(btn => {
+
+        console.error(
+            'Error clearing cart:',
+            error
+        );
+
+        showToast(
+            error.message ||
+            'Error clearing cart',
+            'error'
+        );
+
+        document.querySelectorAll(
+            '.qty-btn, .btn-remove, .btn-clear'
+        ).forEach(btn => {
             btn.disabled = false;
             btn.style.opacity = '1';
         });
