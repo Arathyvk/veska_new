@@ -615,39 +615,39 @@ a{text-decoration:none;color:inherit}
               </div>
               
 
-<!-- 🎨 COLOR SELECTION -->
-<div class="card-colors" id="colors-{{ product.uuid }}">
-    <span class="color-label">Color</span>
+            <!-- 🎨 COLOR SELECTION -->
+            <div class="card-colors" id="colors-{{ product.uuid }}">
+                <span class="color-label">Color</span>
 
-    <div class="color-options">
-        {% with first_color=product.variants.first.color %}
-            {% for variant in product.variants.all %}
+                <div class="color-options">
+                    {% with first_color=product.variants.first.color %}
+                        {% for variant in product.variants.all %}
 
-                {% ifchanged variant.color %}
-                    <button type="button"
-                            class="color-btn"
-                            data-color="{{ variant.color }}"
-                            onclick="selectColor(
-                                this,
-                                '{{ product.uuid }}',
-                                '{{ variant.color|escapejs }}'
-                            )">
+                            {% ifchanged variant.color %}
+                                <button type="button"
+                                        class="color-btn"
+                                        data-color="{{ variant.color }}"
+                                        onclick="selectColor(
+                                            this,
+                                            '{{ product.uuid }}',
+                                            '{{ variant.color|escapejs }}'
+                                        )">
 
-                        <span class="color-dot"
-                              style="background-color: {{ variant.color }};">
-                        </span>
+                                    <span class="color-dot"
+                                          style="background-color: {{ variant.color }};">
+                                    </span>
 
-                        <span class="color-name">
-                            {{ variant.color }}
-                        </span>
+                                    <span class="color-name">
+                                        {{ variant.color }}
+                                    </span>
 
-                    </button>
-                {% endifchanged %}
+                                </button>
+                            {% endifchanged %}
 
-            {% endfor %}
-        {% endwith %}
-    </div>
-</div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
 
 
               <!-- 📏 SIZE BADGES (Dynamic) -->
