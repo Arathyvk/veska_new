@@ -480,7 +480,7 @@ button,input,textarea{font-family:var(--body)}
         <div class="color-options">
           {% for variant in product.variants.all|dictsort:"color" %}
             {% ifchanged variant.color %}
-            <button type="button" class="color-btn {% if forloop.first %}active{% endif %}"
+            <button type="button" class="color-btn"
               data-color="{{ variant.color }}"
               data-image="{% color_image product variant.color %}"
               data-product-uuid="{{ product.uuid }}"
@@ -1244,12 +1244,25 @@ document.addEventListener("DOMContentLoaded", function () {
         const colorButtons = getColorButtons();
         if (!colorButtons.length) return;
 
-        let firstColor = colorButtons.find(btn => btn.classList.contains("active") && !btn.disabled);
-        if (!firstColor) firstColor = colorButtons.find(btn => !btn.disabled);
+        const preselectedColor = colorInput && colorInput.value.trim()
+            ? colorInput.value.trim()
+            : "";
 
-        if (firstColor) {
-            selectedColor = (firstColor.dataset.color || "").trim();
-            firstColor.classList.add("active");
+        if (preselectedColor) {
+            const matched = colorButtons.find(btn => normalize(btn.dataset.color) === normalize(preselectedColor));
+            if (matched) {
+                selectedColor = preselectedColor;
+                matched.classList.add("active");
+                updateSelectedColorLabel();
+                filterSizesByColor(selectedColor);
+                return;
+            }
+        }
+
+        if (colorButtons.length === 1) {
+            const onlyColor = colorButtons[0];
+            selectedColor = (onlyColor.dataset.color || "").trim();
+            onlyColor.classList.add("active");
             if (colorInput) colorInput.value = selectedColor;
             updateSelectedColorLabel();
             filterSizesByColor(selectedColor);
@@ -1444,9 +1457,7 @@ function toggleWishlist(button, slug) {
 
     const selectedSize = sizeInput ? sizeInput.value.trim() : "";
     const selectedColor = colorInput ? colorInput.value.trim() : "";
-    const selectedVariantId = variantIdInput
-        ? variantIdInput.value.trim()
-        : "";
+    const selectedVariantId = variantIdInput ? variantIdInput.value.trim(): "";
 
     const isCurrentlyWishlisted =
         button.classList.contains("wishlisted");
