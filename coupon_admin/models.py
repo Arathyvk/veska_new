@@ -88,27 +88,46 @@ class Coupon(models.Model):
         if self.apply_to == 'all':
             return cart_items
         if self.apply_to == 'category':
-            return [i for i in cart_items if i.product.category in self.categories]
+            selected_categories = {
+                str(category).strip().casefold() for category in self.categories
+            }
+            return [
+                item for item in cart_items
+                if item.product.category.name.strip().casefold() in selected_categories
+            ]
         if self.apply_to == 'product':
-            ids = list(self.products.values_list('id', flat=True))
+            ids = set(self.products.values_list('id', flat=True))
             return [i for i in cart_items if i.product_id in ids]
         return []
 
     def calculate_discount(self, subtotal: Decimal, cart_items=None) -> Decimal:
-        if cart_items and self.apply_to != 'all':
-            eligible = self._eligible_items(cart_items)
-            base = Decimal(str(sum(float(i.line_total) for i in eligible)))
+        eligible = self._eligible_items(cart_items) if cart_items is not None else None
+        if eligible is not None:
+            base = sum(
+                (Decimal(str(item.line_total)) for item in eligible),
+                Decimal('0.00'),
+            )
         else:
             base = subtotal
         if base <= 0:
             return Decimal('0')
         if self.discount_type == 'flat':
-            discount = min(self.value, base)
+            if eligible is None:
+                eligible_quantity = 1
+            else:
+                eligible_quantity = sum(
+                    min(
+                        max(int(item.quantity), 0),
+                        int(item.available_stock),
+                    ) if hasattr(item, 'available_stock') else max(int(item.quantity), 0)
+                    for item in eligible
+                )
+            discount = self.value * eligible_quantity
         else:
             discount = (base * self.value / Decimal('100')).quantize(Decimal('0.01'))
             if self.max_discount:
                 discount = min(discount, self.max_discount)
-        return min(discount, subtotal)
+        return min(discount, base, subtotal)
 
     def validate_all(self, subtotal: Decimal, cart_items, user):
         for fn, args in [
