@@ -708,6 +708,7 @@ a{text-decoration:none;color:inherit}
               <div class="card-footer">
                 <button type="button" class="card-add"
                     data-add-url="{% url 'cart_add' product.slug %}"
+                  data-cart-url="{% url 'cart_detail' %}"
                     onclick="addToCart('{{ product.uuid }}', this)">
               Add to Cart
             </button>
@@ -1171,21 +1172,6 @@ function selectColor(button, productUuid, color) {
         }
     });
 
-    const firstAvailableSize = [...sizeBadges].find(size =>
-        size.dataset.color === color &&
-        Number(size.dataset.stock) > 0
-    );
-
-    if (firstAvailableSize) {
-
-        selectSize(
-            firstAvailableSize,
-            productUuid,
-            firstAvailableSize.dataset.size,
-            firstAvailableSize.dataset.price
-        );
-    }
-
     updateWishlistHeart(card);
 }
 
@@ -1249,15 +1235,39 @@ function selectSize(element, productUuid, size, price) {
 function addToCart(productUuid, btnEl) {
     const url = btnEl.dataset.addUrl;
     const productCard = btnEl.closest('.product-card');
-    const selectedSizeEl = productCard.querySelector('.size-badge.selected-size');
 
+    const selectedSizeEl =
+        productCard.querySelector('.size-badge.selected-size');
+
+    // No size selected
     if (!selectedSizeEl) {
-        showToastMessage('Please select a size first!', 'error');
+      const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+      if (!csrfInput) {
+        showToastMessage('Unable to validate your request. Please refresh and try again.', 'error');
+        return;
+      }
+
+      const validationForm = document.createElement('form');
+      validationForm.method = 'POST';
+      validationForm.action = url;
+      validationForm.style.display = 'none';
+
+      [
+        ['csrfmiddlewaretoken', csrfInput.value],
+        ['next', btnEl.dataset.cartUrl]
+      ].forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        validationForm.appendChild(input);
+      });
+
+      document.body.appendChild(validationForm);
+      validationForm.submit();
         return;
     }
-
     const size = selectedSizeEl.dataset.size;
-
     const activeColorBtn = productCard.querySelector('.color-btn.active');
     const color = activeColorBtn ? activeColorBtn.dataset.color : null;
 
@@ -1274,15 +1284,14 @@ function addToCart(productUuid, btnEl) {
     fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': csrfInput.value,
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin',
-        body: JSON.stringify({
-            size: size,
-            color: color
-        })
+      body: new URLSearchParams({
+        size: size,
+        color: color || ''
+      })
     })
     .then(response => response.json())
     .then(data => {
@@ -1333,8 +1342,6 @@ function showToastMessage(message, type) {
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.product-card').forEach(card => {
         const colorButtons = card.querySelectorAll('.color-btn');
-        const sizeBadges = card.querySelectorAll('.size-badge');
-
         if (!colorButtons.length) return;
 
         let activeColorBtn = card.querySelector('.color-btn.active');
@@ -1348,20 +1355,6 @@ document.addEventListener('DOMContentLoaded', function () {
             card.dataset.productId,
             activeColorBtn.dataset.color
         );
-
-        const color = activeColorBtn.dataset.color;
-
-        let activeSizeBtn = card.querySelector('.size-badge.selected-size');
-
-        if (!activeSizeBtn) {
-            activeSizeBtn = [...sizeBadges].find(el =>
-                el.dataset.color === color && Number(el.dataset.stock) > 0
-            );
-
-            if (activeSizeBtn) {
-                activeSizeBtn.classList.add('selected-size');
-            }
-        }
     });
 });
 
