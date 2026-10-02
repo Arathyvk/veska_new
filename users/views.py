@@ -11,7 +11,7 @@ from django.views.decorators.cache import never_cache
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
 from django.urls import reverse
-from users.utils import apply_referral_for_new_user
+from users.utils import apply_referral_for_new_user, resolve_referral_code
 
 from users.models import User, ReferralCode
 from product_admin.models import Product
@@ -175,6 +175,9 @@ def signup_view(request):
         if posted_ref:
             request.session["pending_referral_code"] = posted_ref
             request.session.modified = True
+       
+        if posted_ref and not resolve_referral_code(posted_ref)[0]:
+            errors["ref_code"] = "This referral code is invalid or inactive."
 
         form_data = {"first_name": first_name, "last_name": last_name, "email": email}
 
@@ -340,7 +343,9 @@ def verify_signup_otp(request):
 
             ref_code = signup_data.get("ref_code") or request.session.pop("pending_referral_code", None)
             request.session.pop("pending_referral_code", None)
-            apply_referral_for_new_user(user, ref_code)
+            referral_applied = apply_referral_for_new_user(user, ref_code)
+            if ref_code and not referral_applied:
+                messages.warning(request, "Your account was created, but the referral code could not be applied.")
 
             request.session.pop("signup_data", None)
             clear_otp_from_session(request, "signup")

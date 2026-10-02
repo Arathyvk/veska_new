@@ -149,11 +149,7 @@ a{text-decoration:none;color:inherit}
           </div>
           <div class="txn-body">
             <div class="txn-title">
-              {% if txn.reason == 'order_cancellation' %}Order Cancellation Refund
-              {% elif txn.reason == 'order_return' %}Return Refund
-              {% elif txn.reason == 'order_payment' %}Order Payment
-              {% elif txn.reason == 'manual_adjustment' %}Manual Adjustment
-              {% else %}{{ txn.reason|title }}{% endif %}
+              {{ txn.get_reason_display }}
             </div>
             {% if txn.order %}<div class="txn-sub">Order #{{ txn.order.order_number }}</div>{% endif %}
             {% if txn.description %}<div class="txn-sub">{{ txn.description }}</div>{% endif %}

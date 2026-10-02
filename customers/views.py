@@ -19,7 +19,7 @@ from django.core.mail import send_mail
 from customers.models import Address, Profile
 from django.urls import reverse
 from users.models import ReferralCode
-from users.utils import get_active_referral_settings
+from users.utils import REFERRER_REFERRAL_BONUS, REFERRED_USER_REFERRAL_BONUS
 from core.otp import OTP_EXPIRY_MINUTES
 
 User = get_user_model()
@@ -181,8 +181,8 @@ def account_profile(request):
 
     referral_code_obj = None
     referral_link = None
-    referral_reward_amount = 0
-    referred_user_reward = 0
+    referral_reward_amount = REFERRER_REFERRAL_BONUS
+    referred_user_reward = REFERRED_USER_REFERRAL_BONUS
 
     try:
         referral_code_obj = ReferralCode.objects.filter(user=user, is_active=True).order_by("-created_at").first()
@@ -192,12 +192,6 @@ def account_profile(request):
 
         signup_path = reverse("signup")
         referral_link = request.build_absolute_uri(f"{signup_path}?ref={referral_code_obj.code}")
-
-        settings_obj = get_active_referral_settings()
-
-        if settings_obj:
-            referral_reward_amount = settings_obj.referral_reward_amount or 0
-            referred_user_reward = settings_obj.referred_user_reward or 0
 
     except Exception:
         referral_code_obj = None
