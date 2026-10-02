@@ -89,7 +89,7 @@ def _send_order_confirmation_email(order, user):
         print(f'[EMAIL ERROR] {e}')
 
 
-def _enrich_coupons(coupons_qs, subtotal, user):
+def _enrich_coupons(coupons_qs, subtotal, user, cart_items):
 
     now = tz.now()
     used_ids = set(
@@ -114,14 +114,11 @@ def _enrich_coupons(coupons_qs, subtotal, user):
             is_valid      = False
             valid_message = f'Min order ₹{coupon.min_order_value} required'
         else:
-            
-            if coupon.discount_type == 'percent':
-                disc = (subtotal * coupon.value / 100).quantize(Decimal('0.01'))
-                if coupon.max_discount:
-                    disc = min(disc, coupon.max_discount)
+            applicable, valid_message = coupon.check_applicability(cart_items)
+            if not applicable:
+                is_valid = False
             else:
-                disc = coupon.value
-            saved_amount = disc
+                saved_amount = coupon.calculate_discount(subtotal, cart_items)
 
         result.append({
             'coupon':        coupon,
@@ -453,7 +450,9 @@ def checkout(request):
     ).filter(
         models.Q(valid_until__isnull=True) | models.Q(valid_until__gte=now)
     )
-    available_coupons = _enrich_coupons(raw_coupons, subtotal, request.user)
+    available_coupons = _enrich_coupons(
+        raw_coupons, subtotal, request.user, list(cart_items)
+    )
 
     available_offers = BaseOffer.objects.filter(
         is_active=True,
