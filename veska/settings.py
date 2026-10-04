@@ -76,7 +76,7 @@ INSTALLED_APPS = [
 
 ]
 
-SITE_ID = 2
+SITE_ID = 1
 
 cloudinary.config(
     cloud_name=config('CLOUDINARY_CLOUD_NAME'),
