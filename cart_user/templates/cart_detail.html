@@ -293,8 +293,8 @@ button,input{font-family:var(--body)}
                           class="qty-btn"
                           data-item-id="{{ item.id }}"
                           data-url="{% url 'cart_update' item.id %}"
-                          data-action="decrease"
-                          {% if item.quantity <= 1 }{% endif %}>
+                          data-action="decrease">
+                          
                           −
                       </button>
 
