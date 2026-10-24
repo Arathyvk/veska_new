@@ -89,9 +89,22 @@ main {
   object-fit: contain;
 }
 
+.product-name {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.product-name a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.product-name a:hover {
+    text-decoration: underline;
+}
+
 .product-image {
   position: relative;
-  height: 260px;
   margin-bottom: 1.2rem;
   border-radius: 4px;
   overflow: hidden;
@@ -106,6 +119,57 @@ main {
 
 .product-card:hover .product-image img {
   transform: scale(1.04);
+}
+
+.shop-card {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;        
+  padding: 0;                
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.shop-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+}
+.shop-card .product-image {
+  margin: -10px;
+  border-radius: 0;
+}
+
+.shop-card .product-image a {
+  display: block;
+  width: 100%;
+}
+
+.shop-card .product-image img {
+  width: 100%;
+  height: 63%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.shop-card:hover .product-image img {
+  transform: scale(1.04);
+}
+
+.shop-card .product-name {
+  margin: 1rem 1rem 0.25rem;
+}
+
+.shop-card .price {
+  margin-bottom: 1rem;
+}
+
+.shop-card .add-btn {
+  margin: 0 1rem 1.25rem;
+  white-space: nowrap;
+  padding: 0.7rem 1rem;
 }
 
 .qv-pill {
@@ -384,7 +448,9 @@ main {
       {% with variant=product.variants.first %}
         {% with img=variant.images.first %}
           {% if img %}
+          <a href ="{% url 'product_detail' product.slug %}">
             <img src="{{ img.image.url }}" alt="{{ product.name }}">
+          </a>
           {% else %}
             <div style="width:100%;height:260px;display:flex;align-items:center;
                         justify-content:center;color:#b0a699">No image</div>
@@ -392,7 +458,7 @@ main {
         {% endwith %}
       {% endwith %}
     </div>
-    <h3>{{ product.name }}</h3>
+    <h3 class ="product-name">{{ product.name }}</h3>
     <p class="price">₹{{ product.price }}</p>
     <a class="add-btn" href="{% url 'product_detail' product.slug %}">
       View Details →
@@ -413,37 +479,33 @@ main {
       <h2>Shop by Category</h2>
       <p>From heels to trainers, flat designs to stylish casual looks — find the perfect fit for your style and occasion.</p>
     </div>
-    <div class="cat-grid">
-      <div class="cat-card">
-        <a href="{% url 'product_shop' %}?category=Sandals"></a>
-        <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=600&q=85" alt="Sandals">
-        <div class="cat-overlay"></div>
-        <div class="cat-label">
-          <h3>Sandals</h3>
-          <span>Shop Now</span>
-        </div>
-      </div>
-      <div class="cat-card">
-        <a href="{% url 'product_shop' %}?category=Heels"></a>
-        <img src="https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=600&q=85" alt="Heels">
-        <div class="cat-overlay"></div>
-        <div class="cat-label">
-          <h3>Heels</h3>
-          <span>Shop Now</span>
-        </div>
-      </div>
-      <div class="cat-card">
-        <a href="{% url 'product_shop' %}?category=Sneakers"></a>
-        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=85" alt="Sneakers">
-        <div class="cat-overlay"></div>
-        <div class="cat-label">
-          <h3>Sneakers</h3>
-          <span>Shop Now</span>
-        </div>
-      </div>
+<div class="product-grid">
+  {% for product in shop_by_category %}
+  <div class="shop-card">
+    <div class="product-image">
+      {% with variant=product.variants.first %}
+        {% with img=variant.images.first %}
+          {% if img %}
+          <a href="{% url 'product_detail' product.slug %}" >
+            <img src="{{ img.image.url }}" alt="{{ product.name }}">
+            </a>
+          {% else %}
+            <div style="width:100%;height:260px;display:flex;align-items:center;
+                        justify-content:center;color:#b0a699">No image</div>
+          {% endif %}
+        {% endwith %}
+      {% endwith %}
     </div>
   </div>
+  {% empty %}
+  <p style="color:var(--muted);grid-column:1/-1;text-align:center">
+    No featured products yet.
+  </p>
+  {% endfor %}
+</div>
+  </div>
 </section>
+
 
 <section>
   <div class="section-wrap">

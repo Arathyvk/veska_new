@@ -26,6 +26,7 @@ from order_user.models import Order, OrderItem
 from customers.models import Address
 from coupon_admin.models import Coupon, CouponUsage
 from wallet_user.models import Wallet, WalletTransaction
+from wallet_user.utils import credit_item_group_bonus
 from checkout_page.models import StripePayment
 from offer_admin.models import BaseOffer, UserOfferUsage
 
@@ -85,8 +86,8 @@ def _send_order_confirmation_email(order, user):
         })
         send_mail(subject, body, settings.DEFAULT_FROM_EMAIL,
                   [user.email], fail_silently=True)
-    except Exception as e:
-        print(f'[EMAIL ERROR] {e}')
+    except Exception:
+        pass
 
 
 def _enrich_coupons(coupons_qs, subtotal, user, cart_items):
@@ -213,8 +214,11 @@ def address_add(request):
             messages.error(request, 'Please correct the error below.')
 
     return render(request, 'address_form.html', {
-        'action': 'add', 'data': data, 'errors': errors,
-        'countries': COUNTRIES, 'address': None,
+        'action': 'add', 
+        'data': data, 
+        'errors': errors,
+        'countries': COUNTRIES, 
+        'address': None,
     })
 
 
@@ -368,6 +372,9 @@ def checkout(request):
         return redirect('cart_detail')
 
     subtotal = sum(_item_price(i) * i.quantity for i in cart_items)
+    total_item_quantity = sum(item.quantity for item in cart_items)
+    item_bonus = Decimal('50.00') * (total_item_quantity // 4)
+    items_until_bonus = 4 - (total_item_quantity % 4)
     coupon_code = request.session.get('coupon_code', '')
     coupon_discount = Decimal(request.session.get('coupon_discount', '0'))
 
@@ -469,6 +476,8 @@ def checkout(request):
         'coupon_discount': totals['coupon_discount'],
         'shipping': totals['shipping'],
         'grand_total': totals['grand_total'],
+        'item_bonus': item_bonus,
+        'items_until_bonus': items_until_bonus,
         'addresses': addresses,
         'selected_id': str(selected.id) if selected else '',
         'free_threshold': FREE_SHIPPING_THRESHOLD,
@@ -736,6 +745,8 @@ def payment_success(request):
                     item.variant.stock = max(0, item.variant.stock - item.quantity)
                     item.variant.save(update_fields=['stock'])
 
+            credit_item_group_bonus(order)
+
             if coupon_code:
                 try:
                     coupon_obj = Coupon.objects.get(code=coupon_code, is_active=True)
@@ -984,6 +995,9 @@ def place_order(request):
                 if item.variant:
                     item.variant.stock = max(0, item.variant.stock - item.quantity)
                     item.variant.save(update_fields=['stock'])
+
+            if payment_method == 'wallet':
+                credit_item_group_bonus(order)
 
             if coupon_obj:
                 coupon_obj.times_used += 1

@@ -73,11 +73,13 @@ class WalletTransaction(models.Model):
         ('ADMIN_DEBIT',   'Admin Debit'),
         ('REFERRAL',      'Referral Bonus'),      
         ('WELCOME',       'Welcome Bonus'),      
+        ('ITEM_BONUS',    'Buy 4 Items Bonus'),
         ('MANUAL',        'Manual'),
     ]
 
     REASON_REFERRAL     = 'REFERRAL'
     REASON_WELCOME      = 'WELCOME'
+    REASON_ITEM_BONUS   = 'ITEM_BONUS'
     REASON_CANCELLATION = 'ORDER_CANCEL'
     REASON_RETURN       = 'ORDER_RETURN'
     REASON_ORDER_CANCEL = 'ORDER_CANCEL'

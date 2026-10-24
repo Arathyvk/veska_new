@@ -43,8 +43,17 @@ def home_view(request):
         .order_by('-created_at')[:8]
     )
 
+    shop_by_category = (
+        Product.objects
+        .filter(is_active=True, shop_by_category=True)
+        .prefetch_related("variants__images")
+        .order_by("-created_at")[:5]
+    )
+
+
     referral_code_obj = None
     referral_link     = None
+
 
     if request.user.is_authenticated:
         referral_code_obj = (
@@ -59,12 +68,14 @@ def home_view(request):
                 user=request.user,
                 code=f"REF{_uuid.uuid4().hex[:8].upper()}",
             )
+
         signup_path = reverse('signup')
         referral_link = request.build_absolute_uri(f'{signup_path}?ref={referral_code_obj.code}')
 
     return render(request, "landing.html", {
         "name":     name,
         "products": featured_products,
+        "shop_by_category" : shop_by_category,
         "referral_code_obj": referral_code_obj,
         "referral_link": referral_link,
     })
@@ -78,7 +89,7 @@ def login_view(request):
     context = {}
     
     if request.method == "POST":
-        email = request.POST.get("email", "").strip().lower()
+        email    = request.POST.get("email", "").strip().lower()
         password = request.POST.get("password", "")
         
         context['email'] = email
@@ -170,8 +181,8 @@ def signup_view(request):
         email            = request.POST.get("email",      "").strip().lower()
         password         = request.POST.get("password",   "")
         confirm_password = request.POST.get("confirm_password", "")
+        posted_ref       = request.POST.get("ref_code", "").strip().upper()
 
-        posted_ref = request.POST.get("ref_code", "").strip().upper()
         if posted_ref:
             request.session["pending_referral_code"] = posted_ref
             request.session.modified = True
@@ -240,7 +251,7 @@ def signup_view(request):
 def verify_signup_otp(request):
     
     signup_data = request.session.get("signup_data")
- 
+
     if not signup_data:
         messages.error(request, "Session expired. Please sign up again.")
         return redirect("signup")
@@ -366,24 +377,31 @@ def verify_signup_otp(request):
 @require_POST
 def resend_otp(request):
     purpose = request.POST.get("purpose", "signup")
-    
-    if purpose == "signup":
-        signup_data = request.session.get("signup_data")
-        if not signup_data:
-            return JsonResponse(
-                {"success": False, "message": "Session expired. Please sign up again."}
-            )
-        email = signup_data.get("email")
+
+    if purpose != "signup":
+        messages.error(request, "Invalid OTP purpose. ")
+        return redirect("signup")
+
+    signup_data = request.session.get("signup_data")
+
+    if not signup_data:
+        messages.error(request, "Session expired. Please sign up again. ")
+        return redirect("signup")
+
+    email = signup_data.get('email')
+
+    if not email:
+        messages.error(request, "Email address not found. Please sign up again. ")
+        return redirect("signup")
 
     otp = gen_otp()
-    save_otp_to_session(request, purpose, otp)  
+    save_otp_to_session(request, purpose, otp)
     send_otp_email(email, otp)
-    
-    return JsonResponse({
-        "success": True, 
-        "message": "OTP sent successfully.",
-        "max_attempts": 3
-    })
+
+    messages.success(request, "OTP sent successfully. ")
+
+    return redirect("verify_otp.html")
+
 
 @never_cache
 def forgot_password(request):
@@ -563,7 +581,6 @@ def reset_password(request):
             return redirect("forgot_password")
  
     return render(request, "reset_password.html")
-
 
 
 def debug_social(request):
