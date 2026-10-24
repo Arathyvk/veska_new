@@ -19,7 +19,12 @@ from django.db import transaction as db_tx
 from django.contrib.auth.decorators import user_passes_test
 from django.utils.timezone import now
 
-from wallet_user.utils import refund_on_return_approval, refund_on_cancellation,refund_on_admin_item_cancel
+from wallet_user.utils import (
+    credit_item_group_bonus,
+    refund_on_return_approval,
+    refund_on_cancellation,
+    refund_on_admin_item_cancel,
+)
 from product_admin.models import Product, ProductVariant
 from category_admin.models import Category
 from order_user.models import Order, OrderItem
@@ -280,6 +285,9 @@ def order_update_status(request, uuid):
 
         elif new_status == 'returned' and old_status != 'returned':
             refund_amount = refund_on_return_approval(order)
+
+        if new_status == 'delivered':
+            credit_item_group_bonus(order)
 
     refund_msg = f" ₹{refund_amount} refunded to {order.user.email}'s wallet." \
                  if refund_amount else ''

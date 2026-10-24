@@ -95,6 +95,7 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);font-si
 /* colour variants per toggle meaning */
 .toggle-wrap.t-active input:checked + .toggle-track   {background:var(--rose)}
 .toggle-wrap.t-homepage input:checked + .toggle-track {background:#5b9cf6}
+.toggle-wrap.t-category input:checked + .toggle-track {background:var(--muted2) }
 .toggle-wrap.t-shop input:checked + .toggle-track     {background:var(--green)}
 
 .upload-zone{
@@ -402,6 +403,24 @@ setTimeout(()=>{
                      onchange="syncPill(this,'pill-featured')">
               <span class="toggle-track"></span>
             </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">
+                Shop by Category
+                <span class="toggle-pill {% if product.shop_by_category %}on{% else %}off{% endif %}" id="pill-category">
+                  {% if product.shop_by_category %}ON{% else %}OFF{% endif %}
+                </span>
+              </div>
+              <div class="toggle-sub">shop by category on the landing page</div>
+            </div>
+            <label class="toggle-wrap t-category">
+              <input type="checkbox" name="shop_by_category" id="toggle-category"
+                      {% if product.shop_by_category %}checked{% endif %}
+                      onchange="syncPill(this,'pill-category')">
+              <span class="toggle-track"></span>        
+            </label> 
           </div>
 
           <div class="toggle-row">

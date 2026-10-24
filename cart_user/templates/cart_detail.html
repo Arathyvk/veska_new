@@ -293,9 +293,9 @@ button,input{font-family:var(--body)}
                           class="qty-btn"
                           data-item-id="{{ item.id }}"
                           data-url="{% url 'cart_update' item.id %}"
-                          data-action="decrease">
-                          
-                          −
+                          data-action="{% if item.quantity%}<= 1%remove{% else %} decrease {% endif %}"
+                          {% if item.quantity <= 1 %} x {% else %} - {% endif %}
+                          >
                       </button>
 
                       <span class="qty-num" id="qty-{{ item.id }}">{{ item.quantity }}</span>
@@ -459,7 +459,14 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const itemId = this.dataset.itemId;
             const action = this.dataset.action;
+
+            if (action=='remove'){
+                if (confirm("remove this item form cart?")) {
+                    removeCartItem(itemId);
+                }
+            }else{
             updateCartItem(itemId, action);
+            }
         });
     });
     
@@ -798,16 +805,25 @@ function initializeMinusButtons() {
     });
 }
 
+
 function updateMinusButtonState(itemId, newQuantity) {
-    const decreaseBtn = document.querySelector(`.qty-btn[data-item-id="${itemId}"][data-action="decrease"]`);
-    if (decreaseBtn) {
-        if (newQuantity <= 1) {
-            decreaseBtn.setAttribute('disabled', 'disabled');
-        } else {
-            decreaseBtn.removeAttribute('disabled');
-        }
+    const decreaseBtn = document.querySelector(
+        `.qty-btn[data-item-id="${itemId}"]`
+    );
+
+    if (!decreaseBtn) return;
+
+    if (newQuantity <= 1) {
+        decreaseBtn.dataset.action = 'remove';
+        decreaseBtn.textContent = 'x';
+        decreaseBtn.title = 'Remove item';
+    } else {
+        decreaseBtn.dataset.action = 'decrease';
+        decreaseBtn.textContent = '-';
+        decreaseBtn.title = 'Decrease quantity';
     }
 }
+
 
 function updateCartItem(itemId, action, quantity = null) {
 

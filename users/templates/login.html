@@ -264,46 +264,6 @@
   const form       = document.getElementById('loginForm');
   const loginBtn   = document.getElementById('loginBtn');
 
-  
-  form.addEventListener('submit', function(e) {
-    let valid = true;
-
-    emailInput.classList.remove('field-error');
-    passInput.classList.remove('field-error');
-    emailHint.classList.remove('visible');
-    passHint.classList.remove('visible');
-
-    const emailVal = emailInput.value.trim();
-    const passVal  = passInput.value;
-
-    if (!emailVal) {
-      emailInput.classList.add('field-error');
-      emailHint.textContent = 'Please enter your email address.';
-      emailHint.classList.add('visible');
-      valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-      emailInput.classList.add('field-error');
-      emailHint.textContent = 'Please enter a valid email (e.g. hello@example.com).';
-      emailHint.classList.add('visible');
-      valid = false;
-    }
-
-    if (!passVal) {
-      passInput.classList.add('field-error');
-      passHint.textContent = 'Please enter your password.';
-      passHint.classList.add('visible');
-      valid = false;
-    }
-
-    if (!valid) {
-      e.preventDefault(); 
-      return;
-    }
-
-    loginBtn.disabled    = true;
-    loginBtn.textContent = 'Logging in…';
-  });
-
   document.getElementById('eyeBtn').addEventListener('click', () => {
     const i = passInput;
     const b = document.getElementById('eyeBtn');
@@ -319,6 +279,7 @@
     passInput.classList.remove('field-error');
     passHint.classList.remove('visible');
   });
+  
 </script>
 
 </body>

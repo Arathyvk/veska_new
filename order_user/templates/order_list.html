@@ -151,10 +151,10 @@ button,input,select{font-family:var(--body)}
       <span class="current">My Orders</span>
     </nav>
 
-    {% for message in messages %}
+    {% for msg in messages %}
     <div class="msg {{ message.tags }}">
-      {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}🚫{% else %}⚠️{% endif %}
-      {{ message }}
+      {% if msg.tags == 'success' %}✅{% elif msg.tags == 'error' %}🚫{% else %}⚠️{% endif %}
+      {{ msg }}
     </div>
     {% endfor %}
 
@@ -164,7 +164,7 @@ button,input,select{font-family:var(--body)}
                value="{{ search_query }}" placeholder="Search by order ID, product name…"
                autocomplete="off">
         {% if search_query %}
-          <button type="button" class="btn-clear-search" onclick="clearSearch()">✕</button>
+          <button type="button" class="btn-clear-search" onclick="clearSearch()">x</button>
         {% endif %}
         <button type="submit" class="btn-search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -204,7 +204,6 @@ button,input,select{font-family:var(--body)}
           {{ order.get_status_display }}
         </span>
       </div>
-
     </div>
 
     <div class="order-card-body">
@@ -241,7 +240,11 @@ button,input,select{font-family:var(--body)}
           🚚 {% if order.shipping_charge == 0 %}Free shipping{% else %}Shipping ₹{{ order.shipping_charge|floatformat:2 }}{% endif %}
         </span>
         {% if order.coupon_code %}
-        <span>🏷️ {{ order.coupon_code }}</span>
+        <span>🏷️ Coupon: {{ order.coupon_code }}</span>
+        {% endif %}
+
+        {% if order.offer_discount %}
+        <span>🎉 Offer:  {{ order.offer_discount }} </span>
         {% endif %}
       </div>
     </div>
@@ -249,7 +252,7 @@ button,input,select{font-family:var(--body)}
     <div class="order-card-foot">
 
       <div class="order-total">
-        ₹{{ order.total|floatformat:2  }}
+        ₹{{ order.total|floatformat:2 }}
       </div>
 
       <div class="order-actions">

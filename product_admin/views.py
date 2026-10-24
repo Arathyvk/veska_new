@@ -248,6 +248,7 @@ def product_edit(request, uuid):
             product.is_active = 'is_active' in request.POST
             product.is_featured = 'is_featured' in request.POST
             product.is_shop_active = 'is_shop_active' in request.POST
+            product.shop_by_category = 'shop_by_category' in request.POST
             
             if is_draft:
                 product.is_active = False

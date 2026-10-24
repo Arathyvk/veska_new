@@ -1,11 +1,45 @@
 from decimal import Decimal
 from django.db import transaction
+from order_user.models import Order
 from wallet_user.models import Wallet, WalletTransaction
 
 
 def get_or_create_wallet(user):
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet
+
+
+@transaction.atomic
+def credit_item_group_bonus(order):
+    order = Order.objects.select_for_update().get(pk=order.pk)
+    paid_order = order.payment_status == 'paid'
+    delivered_cod_order = order.payment_method == 'cod' and order.status == 'delivered'
+    if not (paid_order or delivered_cod_order):
+        return Decimal('0.00')
+
+    if WalletTransaction.objects.filter(
+        order=order,
+        reason=WalletTransaction.REASON_ITEM_BONUS,
+        transaction_type=WalletTransaction.CREDIT,
+    ).exists():
+        return Decimal('0.00')
+
+    item_count = sum(
+        order.items.filter(is_cancelled=False).values_list('quantity', flat=True)
+    )
+    bonus = Decimal('50.00') * (item_count // 4)
+    if bonus <= 0:
+        return Decimal('0.00')
+
+    wallet = get_or_create_wallet(order.user)
+    wallet = Wallet.objects.select_for_update().get(pk=wallet.pk)
+    wallet.credit(
+        amount=bonus,
+        reason=WalletTransaction.REASON_ITEM_BONUS,
+        order=order,
+        description=f'₹50 bonus for each complete group of 4 items in order #{order.order_number}',
+    )
+    return bonus
 
 
 @transaction.atomic

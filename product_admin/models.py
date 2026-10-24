@@ -36,6 +36,7 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_featured = models.BooleanField(default=False)
+    shop_by_category = models.BooleanField(default=False)
     is_shop_active = models.BooleanField(default=True)
 
     class Meta:

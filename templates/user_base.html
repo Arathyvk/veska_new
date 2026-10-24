@@ -27,7 +27,7 @@ nav a:hover{color:var(--btn)}
 .header-icons a:hover{color:var(--btn)}
 .user-menu{display:flex;align-items:center;gap:10px;position:relative}
 .username-label{font-size:clamp(10px,.9vw,13px);font-weight:500;letter-spacing:.04em;color:var(--text);white-space:nowrap}
-.letter-avatar{min-width:26px;width:80px;height:34px;background:var(--btn);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;font-weight:600;font-size:clamp(10px,1vw,14px);cursor:pointer;padding:0 10px;flex-shrink:0;transition:background .2s}
+.letter-avatar{min-width:26px;width:100px;height:34px;background:var(--btn);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;font-weight:600;font-size:clamp(10px,1vw,14px);cursor:pointer;padding:0 10px;flex-shrink:0;transition:background .2s}
 .letter-avatar:hover{background:var(--btn-hover)}
 .dropdown-content{display:none;position:absolute;top:44px;right:0;background:#fff;min-width:150px;box-shadow:0 6px 20px rgba(0,0,0,.12);border-radius:10px;overflow:hidden;z-index:1000}
 .dropdown-content a{display:block;padding:10px 16px;text-decoration:none;color:var(--text);font-size:13px;font-weight:400;transition:background .15s}
@@ -145,6 +145,8 @@ footer{background-color:var(--veska-beige);padding:0 5% 40px;color:var(--black);
       <div class="dropdown">
         <div class="letter-avatar" id="userAvatar">
           {{ user.first_name }}
+          {{ user.last_name }}
+
         </div>
         <div class="dropdown-content" id="dropdownMenu">
           <a href="{% url 'account_profile' %}"><i class="fa-regular fa-user" style="margin-right:7px;font-size:12px"></i>Profile</a>

@@ -616,15 +616,6 @@ a{text-decoration:none;color:inherit}
                 <div class="pay-info">
                   <div class="pay-name">Veska Wallet <span class="wallet-bal-chip">₹{{ wallet_balance|floatformat:2 }} available</span></div>
                   <div class="pay-sub">Pay instantly using your wallet balance
-                    {% if wallet_balance >= grand_total %}· <strong style="color:var(--success)">Full order covered ✓</strong>{% else %}· Partial payment supported{% endif %}
-                  </div>
-                </div>
-              </label>
-              <div class="wallet-deduct-row" id="walletDeductRow">
-                <div class="wdr-label">Amount to use from wallet</div>
-                <div class="wdr-row">
-                  <input type="number" id="walletAmount" class="wdr-input"
-                         placeholder="Enter amount" min="1"
                          max="{{ grand_total|floatformat:0 }}" step="1"
                          value="{{ grand_total|floatformat:0 }}">
                   <button type="button" class="btn-wdr-apply" id="applyWalletBtn" onclick="applyWalletPayment()">Apply</button>
@@ -662,8 +653,6 @@ a{text-decoration:none;color:inherit}
               <span class="val">−₹{{ offer_discount|floatformat:2 }}</span>
             </div>
             {% endif %}
-
-            <!-- existing coupon row below... -->
              
             <!-- Coupon discount row — shown when coupon is applied -->
             {% if coupon_code %}
@@ -703,6 +692,15 @@ a{text-decoration:none;color:inherit}
             <div class="sum-total">
               <span class="lbl">Total to Pay</span>
               <span class="val" id="grandTotalVal">₹{{ grand_total|floatformat:2 }}</span>
+            </div>
+
+            <div class="free-ship-hint" style="margin-top:12px">
+              {% if item_bonus > 0 %}
+                🎁 This order earns ₹{{ item_bonus|floatformat:0 }} in Veska Wallet bonus after successful purchase.
+              {% else %}
+                🎁 Add {{ items_until_bonus }} more item{{ items_until_bonus|pluralize }} to earn a ₹50 Veska Wallet bonus.
+              {% endif %}
+              Earn ₹50 for every group of 4 items.
             </div>
 
             {% if shipping > 0 %}
@@ -764,14 +762,13 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script>
-/* ── Django context injected safely ── */
 // ── Django context injected safely ── 
 const GRAND_TOTAL        = parseFloat('{{ grand_total|floatformat:2 }}');
 const SUBTOTAL           = parseFloat('{{ subtotal|floatformat:2 }}');
 const SHIPPING           = parseFloat('{{ shipping|floatformat:2 }}');
 const WALLET_BALANCE     = parseFloat('{{ wallet_balance|default:"0" }}');
 const COUPON_DISCOUNT    = parseFloat('{{ coupon_discount|default:"0" }}');
-const OFFER_DISCOUNT     = parseFloat('{{ offer_discount|default:"0" }}');  // ADD THIS
+const OFFER_DISCOUNT     = parseFloat('{{ offer_discount|default:"0" }}'); 
 const COUPON_CODE        = "{{ coupon_code|default:'' }}";
 const CSRF_TOKEN         = '{{ csrf_token }}';
 const HAS_ADDRESS        = {{ addresses|yesno:"true,false" }};

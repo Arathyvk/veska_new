@@ -496,12 +496,14 @@ def return_request(request, uuid, item_id):
         if not confirmed:
             messages.error(request, 'Please confirm the return conditions.')
             return render(request, 'return_request.html', {
-                'order': order, 'order_item': order_item,
+                'order': order, 
+                'order_item': order_item,
                 'existing_return': existing_return,
                 'is_returnable_category': is_returnable_category,
                 'deadline_expired': deadline_expired,
                 'return_deadline': return_deadline,
-                'days_left': days_left, 'reasons': RETURN_REASONS,
+                'days_left': days_left, 
+                'reasons': RETURN_REASONS,
             })
 
         with db_tx.atomic():
