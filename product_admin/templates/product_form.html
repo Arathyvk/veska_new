@@ -93,10 +93,12 @@ html,body{font-family:var(--body);background:var(--bg);color:var(--text);font-si
 .toggle-wrap input:checked + .toggle-track::after{transform:translateX(20px)}
 
 /* colour variants per toggle meaning */
-.toggle-wrap.t-active input:checked + .toggle-track   {background:var(--rose)}
+.toggle-wrap.t-active   input:checked + .toggle-track {background:var(--rose)}
 .toggle-wrap.t-homepage input:checked + .toggle-track {background:#5b9cf6}
 .toggle-wrap.t-category input:checked + .toggle-track {background:var(--muted2) }
-.toggle-wrap.t-shop input:checked + .toggle-track     {background:var(--green)}
+.toggle-wrap.t-launches input:checked + .toggle-track {background:#FFBA02 }
+.toggle-wrap.t-footwear input:checked + .toggle-track {background:#CF5956 }
+.toggle-wrap.t-shop     input:checked + .toggle-track {background:var(--green)}
 
 .upload-zone{
   border:2px dashed var(--border2);border-radius:10px;padding:97px 47px;
@@ -280,6 +282,9 @@ setTimeout(()=>{
               value="{{ form.brand.value|default:'' }}"
               pattern="[A-Za-z ]+"
               oninput="this.value=this.value.replace(/[^A-Za-z0-9\s.,()\-\/&%!?;:'"'"']/g,"")">
+            {% if form.brand.errors %}
+              <div class="ferror">{{ form.brand.errors.0 }}</div>
+            {% endif %}
           </div>
 
           <div class="fgrid2">
@@ -299,13 +304,21 @@ setTimeout(()=>{
             </div>
           </div>
 
-        <div class="frow">
-            <label class="flabel">Description</label>
-            <textarea class="ftextarea"
-                name="description"
-                rows="4"
-                oninput='this.value=this.value.replace(/[^A-Za-z0-9\s.,()\-\/&%!?;:'"'"']/g,"")'>{{ form.description.value|default:'' }}</textarea>
-        </div>
+<div class="frow">
+    <label class="flabel" for="description">Description</label>
+
+    <textarea
+    class="ftextarea"
+    id="description"
+    name="description"
+    rows="4"
+>{{ form.description.value|default_if_none:'' }}</textarea>
+
+    {% if form.description.errors %}
+        <div class="ferror">{{ form.description.errors.0 }}</div>
+    {% endif %}
+</div>
+
 
         </div>
       </div>
@@ -323,7 +336,13 @@ setTimeout(()=>{
             {% for vform in variant_formset %}
             <div class="variant-row" id="variant-row-{{ forloop.counter0 }}">
               {% for hidden in vform.hidden_fields %}{{ hidden }}{% endfor %}
-              <div class="vfield"><label class="vfield-label">Size</label>{{ vform.size }}</div>
+              <div class="vfield">
+                <label class="vfield-label">Size</label>
+                {{ vform.size }}
+                {% if vform.size.errors %}
+                  <div class="ferror">{{ vform.size.errors.0 }}</div>
+                {% endif %}
+              </div>
               <div class="vfield">
                 <label class="vfield-label">Color</label>
                 {{ vform.color }}
@@ -331,8 +350,20 @@ setTimeout(()=>{
                   <div class="ferror">{{ vform.color.errors.0 }}</div>
                 {% endif %}
               </div>        
-              <div class="vfield"><label class="vfield-label">Stock</label>{{ vform.stock }}</div>
-              <div class="vfield"><label class="vfield-label">Price (₹)</label>{{ vform.price }}</div>
+              <div class="vfield">
+                <label class="vfield-label">Stock</label>
+                {{ vform.stock }}
+                {% if vform.stock.errors %}
+                  <div class="ferror">{{ vform.stock.errors.0 }}</div>
+                {% endif %}
+              </div>
+              <div class="vfield">
+                <label class="vfield-label">Price (₹)</label>
+                {{ vform.price }}
+                {% if vform.price.errors %}
+                  <div class="ferror">{{ vform.price.errors.0 }}</div>
+                {% endif %}
+              </div>
               {% if vform.instance.pk %}
                 <label style="font-size:11px">{{ vform.DELETE }} Remove</label>
               {% else %}
@@ -419,6 +450,42 @@ setTimeout(()=>{
               <input type="checkbox" name="shop_by_category" id="toggle-category"
                       {% if product.shop_by_category %}checked{% endif %}
                       onchange="syncPill(this,'pill-category')">
+              <span class="toggle-track"></span>        
+            </label> 
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">
+                New Launches
+                <span class="toggle-pill {% if product.new_launches %}on{% else %}off{% endif %}" id="pill-launches">
+                  {% if product.new_launches %}ON{% else %}OFF{% endif %}
+                </span>
+              </div>
+              <div class="toggle-sub">NEW LAUNCHES</div>
+            </div>
+            <label class="toggle-wrap t-launches">
+              <input type="checkbox" name="new_launches" id="toggle-category"
+                      {% if product.new_launches %}checked{% endif %}
+                      onchange="syncPill(this,'pill-launches')">
+              <span class="toggle-track"></span>        
+            </label> 
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">
+                Women Footwear
+                <span class="toggle-pill {% if product.women_footwear %}on{% else %}off{% endif %}" id="pill-footwear">
+                  {% if product.women_footwear %}ON{% else %}OFF{% endif %}
+                </span>
+              </div>
+              <div class="toggle-sub">Women Footwear</div>
+            </div>
+            <label class="toggle-wrap t-footwear">
+              <input type="checkbox" name="women_footwear" id="toggle-category"
+                      {% if product.women_footwear %}checked{% endif %}
+                      onchange="syncPill(this,'pill-footwear')">
               <span class="toggle-track"></span>        
             </label> 
           </div>
@@ -814,8 +881,6 @@ function removeVariant(btn) {
         row.style.display = "none";
     } else {
         row.remove();
-        const totalForms = document.getElementById("id_variants-TOTAL_FORMS");
-        totalForms.value = document.querySelectorAll("#variant-formset-rows .variant-row").length;
     }
 }
 
