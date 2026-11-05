@@ -245,10 +245,12 @@ def product_edit(request, uuid):
             removed_image_ids = request.POST.get('removed_image_ids', '[]')
             
             product = form.save(commit=False)
-            product.is_active = 'is_active' in request.POST
-            product.is_featured = 'is_featured' in request.POST
-            product.is_shop_active = 'is_shop_active' in request.POST
+            product.is_active        = 'is_active' in request.POST
+            product.is_featured      = 'is_featured' in request.POST
+            product.is_shop_active   = 'is_shop_active' in request.POST
             product.shop_by_category = 'shop_by_category' in request.POST
+            product.new_launches     = 'new_launches' in request.POST
+            product.women_footwear   = 'women_footwear' in request.POST
             
             if is_draft:
                 product.is_active = False

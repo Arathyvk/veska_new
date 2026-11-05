@@ -46,7 +46,6 @@ class ProductForm(forms.ModelForm):
         }
 
     def clean_name(self):
-        print("clean_name called")
         name = self.cleaned_data.get("name", "").strip()
 
         if not re.fullmatch(r"[A-Za-z0-9\s.,()\-\/&%!?;:'\"]+", name):
@@ -65,20 +64,6 @@ class ProductForm(forms.ModelForm):
             )
 
         return brand
-
-
-    def clean_description(self):
-        description = self.cleaned_data.get("description", "").strip()
-
-        if description and not re.fullmatch(
-            r"[A-Za-z0-9\s.,()\-\/&%!?;:'\"]+",
-            description
-        ):
-            raise ValidationError(
-                "Description contains invalid characters."
-            )
-
-        return description
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -122,7 +107,7 @@ class ProductVariantForm(forms.ModelForm):
     def clean_color(self):
         color = self.cleaned_data.get('color', '').strip()
 
-        if not re.fullmatch(r'[A-Za-z ]+', color):
+        if color and not re.fullmatch(r'[A-Za-z ]+', color):
             raise ValidationError(
                 "Color can contain only letters and spaces."
             )

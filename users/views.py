@@ -50,6 +50,20 @@ def home_view(request):
         .order_by("-created_at")[:5]
     )
 
+    new_launches = (
+        Product.objects
+        .filter(is_active=True, new_launches=True)
+        .prefetch_related("variants__images")
+        .order_by("-created_at")[:6]
+    )
+
+    women_footwear = (
+        Product.objects
+        .filter(is_active=True, women_footwear=True)
+        .prefetch_related("variants__images")
+        .order_by("-created_at")[:10]
+    )
+
 
     referral_code_obj = None
     referral_link     = None
@@ -78,6 +92,8 @@ def home_view(request):
         "shop_by_category" : shop_by_category,
         "referral_code_obj": referral_code_obj,
         "referral_link": referral_link,
+        "new_launches": new_launches,
+        "women_footwear": women_footwear
     })
 
 
