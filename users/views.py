@@ -172,7 +172,7 @@ def login_view(request):
             return redirect(next_url)
         return redirect("home")
 
-    return render(request, "login.html", context)
+    return render(request, "login.html", context, status=400)
 
 
 def logout_view(request):
@@ -260,7 +260,7 @@ def signup_view(request):
         "form_data": form_data,
         "ref_code": request.session.get("pending_referral_code", ""),
 
-        })
+        }, status=400)
 
 
 @never_cache
